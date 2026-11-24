@@ -291,3 +291,13 @@ Stop and ask the human before continuing when:
 - [ ] After merge: task ticked in `Workflow.md` and `Workflow.vi.md`
 
 <!-- /setup-matt-pocock-skills adds an "## Agent skills" section below this line. Keep it. -->
+
+## Agent skills
+
+### Issue tracker
+
+Specs and tasks are GitHub issues in `hienbn1910/gearnix`, managed with the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Domain docs
+
+Single-context: one `GLOSSARY.md` and `docs/adr/` at the repo root. See `docs/agents/domain.md`.
