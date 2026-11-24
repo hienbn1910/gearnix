@@ -57,6 +57,7 @@ read only the sections relevant to the question.
 | **GitHub Issues** | Specs and task status (open = not done) | Created by `/to-spec`, `/to-tickets`; closed by merged PRs |
 | `docs/agents/*.md` | Configuration for the agent skills (issue tracker, labels, domain docs) | Created by `/setup-matt-pocock-skills` |
 | `README.md` | Public project presentation | Agent drafts, human approves |
+| `notes/Week-<n>/<task-id>.md` | Vietnamese study note per roadmap task (§7) | Agent writes at hand-over, human reviews |
 
 > ⚠️ Naming: `Rule.md` §1 is titled "Workflow" and describes the **per-task process**.
 > `Workflow.md` is the **project plan**. They are different things.
@@ -110,7 +111,7 @@ Never resolve a conflict silently. Point it out and ask.
 
 - **Talk to the human in Vietnamese**, using simple words. Explain technical terms the first time they appear.
 - **Everything in the repository is in English:** code, identifiers, comments, commits, issues, PRs, ADRs,
-  glossary. Exceptions: `Workflow.vi.md`, Vietnamese UI text and seed data.
+  glossary. Exceptions: `Workflow.vi.md`, task notes in `notes/` (§7), Vietnamese UI text and seed data.
 - Be concise. Lead with the result, then details.
 - When you need a decision, ask **one clear question** with 2–3 options and a recommendation.
   (During `/grill-with-docs`, follow the skill's round format instead.)
@@ -172,6 +173,26 @@ Tasks marked ⭐ in `Workflow.md` §14 are the heart of the project and the most
 - Why this approach, and what the alternative was (e.g. atomic update vs read-check-write).
 - 2–3 interview questions the human might be asked about it, with short answer hints.
 
+**Task notes (every roadmap task, ⭐ or not):**
+
+The human keeps a Vietnamese study note per task, to review before interviews.
+
+- **Where:** `notes/Week-<n>/<task-id>.md`, one file per task, in the folder of the week the task belongs to in
+  `Workflow.md` §14 (e.g. `notes/Week-1/W1-01.md`, `notes/Week-2/W2-03.md`). Bonus tasks `B1-xx` go in `notes/Week-6/`.
+- **When:** at hand-over (`Rule.md` §1 step 12), together with the self-review report and PR body, so the human reads
+  it while reviewing the PR. Commit it on the task branch as `docs(notes): <task-id> study note (#<issue>)`.
+  If review changes the work, update the note in the same PR before merge.
+- **Scope:** roadmap tasks only (`W?-??`, `B1-??`). Chores and docs-only PRs outside the roadmap need no note.
+- **Content:** plain Vietnamese, short; explain each technical term the first time it appears. Use these headings:
+  1. **Mục tiêu** — what the task does; links to its issue and PR.
+  2. **Đã làm gì** — the main files or components, one line each.
+  3. **Kiến thức** — the concepts used (e.g. EF Core migrations, atomic conditional update).
+  4. **Quyết định và lý do** — the approach chosen, the alternative, and why.
+  5. **Test** — each test or test group: what it checks and why it is needed. No need to copy the code.
+  6. **Câu hỏi phỏng vấn** — 2–3 likely questions with short answer hints.
+  7. **Lưu ý** — pitfalls met, topics worth reading further.
+- For ⭐ tasks, the "Giải thích" section above is included in the note as well.
+
 **General:**
 - Prefer simple, readable code over clever code. No abstractions "for the future".
 - If the human asks you to just do it, do it — but still give the short explanation for ⭐ tasks.
@@ -229,6 +250,7 @@ docker-compose.yml
 .claude/              ← hooks (git guardrails) and project settings
 docs/adr/             ← architecture decision records
 docs/agents/          ← agent skills configuration
+notes/Week-<n>/       ← Vietnamese study note per task (W1-01.md, …)
 src/Api/              ← ASP.NET Core API (modules under Modules/)
 src/web/storefront/   ← React storefront
 src/web/admin/        ← React admin
@@ -288,6 +310,7 @@ Stop and ask the human before continuing when:
 - [ ] Commits follow the message format and reference the issue
 - [ ] Self-review report (`Rule.md` §12) and PR body (`pr` skill, `Closes #<issue>`) posted
 - [ ] "Giải thích" section in Vietnamese for ⭐ tasks
+- [ ] Study note written and committed: `notes/Week-<n>/<task-id>.md` (§7)
 - [ ] After merge: task ticked in `Workflow.md` and `Workflow.vi.md`
 
 <!-- /setup-matt-pocock-skills adds an "## Agent skills" section below this line. Keep it. -->
