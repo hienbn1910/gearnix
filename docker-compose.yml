@@ -8,7 +8,8 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env (see .env.example)}
       POSTGRES_DB: ${POSTGRES_DB:?Set POSTGRES_DB in .env (see .env.example)}
     ports:
-      - "5432:5432"
+      # Bound to localhost only; set POSTGRES_PORT in .env if 5432 is already taken on your machine.
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
