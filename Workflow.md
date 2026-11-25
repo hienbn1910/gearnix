@@ -900,14 +900,14 @@ Every task follows the full process in `Rule.md` §1.
 - Each issue belongs to its week's GitHub milestone (`Week 1` … `Week 5`, `Bonus`).
 - A task is done when its pull request (`Closes #14`) is merged. Then tick it here and in `Workflow.vi.md`.
 
-**Current phase:** Week 1 — not started
+**Current phase:** Week 1 — in progress
 
 ### Week 1 — Foundation and Catalog
 
-- [ ] **W1-01** (#6) Repository setup: solution, folders per `Rule.md` §2, `.editorconfig`, `Directory.Build.props`
+- [x] **W1-01** (#6) Repository setup: solution, folders per `Rule.md` §2, `.editorconfig`, `Directory.Build.props`
   (nullable enabled, warnings as errors), `docker-compose.yml` (PostgreSQL), `.gitignore`, README skeleton.
   *Done when:* `docker compose up -d` followed by `dotnet run` starts the API.
-- [ ] **W1-02** CI with GitHub Actions: backend build and tests, .NET vulnerability check; Dependabot.
+- [ ] **W1-02** (#8) CI with GitHub Actions: backend build and tests, .NET vulnerability check; Dependabot.
   Frontend jobs are added in W1-09, once the apps exist.
   *Done when:* a pull request shows green checks.
 - [ ] **W1-03** Data foundation: `AppDbContext`, snake_case naming, UTC and decimal conventions, `TimeProvider`,

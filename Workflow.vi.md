@@ -900,14 +900,14 @@ Mọi task đi theo quy trình đầy đủ ở `Rule.md` §1.
 - Mỗi issue thuộc milestone GitHub của tuần tương ứng (`Week 1` … `Week 5`, `Bonus`).
 - Task xong khi pull request (`Closes #14`) được merge. Lúc đó đánh dấu ở đây và trong `Workflow.md`.
 
-**Giai đoạn hiện tại:** Tuần 1 — chưa bắt đầu
+**Giai đoạn hiện tại:** Tuần 1 — đang thực hiện
 
 ### Tuần 1 — Nền tảng và Catalog
 
-- [ ] **W1-01** (#6) Dựng repository: solution, thư mục theo `Rule.md` §2, `.editorconfig`, `Directory.Build.props`
+- [x] **W1-01** (#6) Dựng repository: solution, thư mục theo `Rule.md` §2, `.editorconfig`, `Directory.Build.props`
   (bật nullable, coi cảnh báo là lỗi), `docker-compose.yml` (PostgreSQL), `.gitignore`, khung README.
   *Xong khi:* chạy `docker compose up -d` rồi `dotnet run` thì API khởi động được.
-- [ ] **W1-02** CI bằng GitHub Actions: build và test backend, kiểm tra lỗ hổng thư viện .NET; Dependabot.
+- [ ] **W1-02** (#8) CI bằng GitHub Actions: build và test backend, kiểm tra lỗ hổng thư viện .NET; Dependabot.
   Job cho frontend được thêm ở W1-09, khi các app đã tồn tại.
   *Xong khi:* một pull request hiện dấu tích xanh.
 - [ ] **W1-03** Nền tảng dữ liệu: `AppDbContext`, đặt tên snake_case, quy ước UTC và decimal, `TimeProvider`,
