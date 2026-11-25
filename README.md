@@ -16,7 +16,7 @@ Requirements: [.NET SDK 10](https://dotnet.microsoft.com/download) and Docker wi
 
    ```bash
    cp .env.example .env
-   # edit .env and set POSTGRES_PASSWORD
+   # edit .env: set POSTGRES_PASSWORD, and change POSTGRES_PORT if 5432 is already in use
    ```
 
 2. Start PostgreSQL:
