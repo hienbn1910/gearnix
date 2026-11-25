@@ -1,5 +1,7 @@
 # Gearnix
 
+[![CI](https://github.com/hienbn1910/gearnix/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/hienbn1910/gearnix/actions/workflows/ci.yml)
+
 Gearnix is an e-commerce backend for consumer electronics (phones, laptops, PC components, accessories) built around
 **multi-warehouse inventory management**. The storefront is deliberately simple; the focus is on stock correctness
 under concurrency, reservations with expiry, idempotent checkout and payments, and a traceable stock ledger.
