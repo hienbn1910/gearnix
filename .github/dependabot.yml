@@ -6,8 +6,7 @@ updates:
     schedule:
       interval: weekly
     commit-message:
-      prefix: chore
-      include: scope
+      prefix: chore(deps)
     groups:
       nuget-minor-and-patch:
         update-types: [minor, patch]
@@ -17,8 +16,7 @@ updates:
     schedule:
       interval: weekly
     commit-message:
-      prefix: chore
-      include: scope
+      prefix: chore(deps)
     groups:
       actions-minor-and-patch:
         update-types: [minor, patch]

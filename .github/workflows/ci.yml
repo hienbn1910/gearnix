@@ -41,11 +41,15 @@ jobs:
 
       # `dotnet list package --vulnerable` exits 0 even when it finds vulnerabilities,
       # so the JSON report is inspected and the step fails if any are listed.
+      # It also exits 0 with an empty report when vulnerability data cannot be fetched;
+      # that case is caught earlier: restore's NuGet audit raises NU1900-NU1904, and
+      # TreatWarningsAsErrors (Directory.Build.props) turns them into restore errors.
       - name: Check for vulnerable packages
         run: |
-          dotnet list package --vulnerable --include-transitive --format json > vulnerable.json
-          if grep -q '"vulnerabilities"' vulnerable.json; then
-            cat vulnerable.json
+          report="$RUNNER_TEMP/vulnerable.json"
+          dotnet list package --vulnerable --include-transitive --format json > "$report"
+          if grep -q '"vulnerabilities"' "$report"; then
+            cat "$report"
             echo "::error::Vulnerable NuGet packages found (see the report above)."
             exit 1
           fi
