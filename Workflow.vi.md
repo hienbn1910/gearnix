@@ -904,7 +904,7 @@ Mọi task đi theo quy trình đầy đủ ở `Rule.md` §1.
 
 ### Tuần 1 — Nền tảng và Catalog
 
-- [ ] **W1-01** Dựng repository: solution, thư mục theo `Rule.md` §2, `.editorconfig`, `Directory.Build.props`
+- [ ] **W1-01** (#6) Dựng repository: solution, thư mục theo `Rule.md` §2, `.editorconfig`, `Directory.Build.props`
   (bật nullable, coi cảnh báo là lỗi), `docker-compose.yml` (PostgreSQL), `.gitignore`, khung README.
   *Xong khi:* chạy `docker compose up -d` rồi `dotnet run` thì API khởi động được.
 - [ ] **W1-02** CI bằng GitHub Actions: build và test backend, kiểm tra lỗ hổng thư viện .NET; Dependabot.

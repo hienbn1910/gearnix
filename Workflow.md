@@ -904,7 +904,7 @@ Every task follows the full process in `Rule.md` §1.
 
 ### Week 1 — Foundation and Catalog
 
-- [ ] **W1-01** Repository setup: solution, folders per `Rule.md` §2, `.editorconfig`, `Directory.Build.props`
+- [ ] **W1-01** (#6) Repository setup: solution, folders per `Rule.md` §2, `.editorconfig`, `Directory.Build.props`
   (nullable enabled, warnings as errors), `docker-compose.yml` (PostgreSQL), `.gitignore`, README skeleton.
   *Done when:* `docker compose up -d` followed by `dotnet run` starts the API.
 - [ ] **W1-02** CI with GitHub Actions: backend build and tests, .NET vulnerability check; Dependabot.

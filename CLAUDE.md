@@ -218,15 +218,18 @@ These are the reason the project exists. Breaking any of them is a critical bug.
 
 ## 9. Commands
 
-> Planned commands. Update this section when the actual scripts are created (tasks W1-01, W1-09).
+> Commands marked ✅ were verified in W1-01. The others are planned: mark them when their task makes them work
+> (migrations: W1-03; frontend: W1-09; load tests: W4-07).
 
 | Purpose | Command |
 |---|---|
-| Start database | `docker compose up -d` |
-| Run API | `dotnet run --project src/Api` |
-| Build | `dotnet build` |
-| Test (all) | `dotnet test` |
-| Format | `dotnet format` |
+| ✅ First-time setup | `cp .env.example .env`, then set `POSTGRES_PASSWORD` (and `POSTGRES_PORT` if 5432 is taken) |
+| ✅ Start database | `docker compose up -d` (PostgreSQL 17 on `127.0.0.1:${POSTGRES_PORT}`, default 5432) |
+| ✅ Stop database | `docker compose down` (data is kept in the `postgres-data` volume) |
+| ✅ Run API | `dotnet run --project src/Api` |
+| ✅ Build | `dotnet build` |
+| ✅ Test (all) | `dotnet test` (Microsoft.Testing.Platform runner, set in `global.json`) |
+| ✅ Format | `dotnet format`; CI-style check: `dotnet format --verify-no-changes` |
 | Add migration | `dotnet ef migrations add <Name> --project src/Api --output-dir Data/Migrations` |
 | Apply migrations (local only) | `dotnet ef database update --project src/Api` |
 | Build migration bundle (deploy) | `dotnet ef migrations bundle --project src/Api` |
