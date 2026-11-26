@@ -1,3 +1,4 @@
+using Gearnix.Api.Common.Errors;
 using Gearnix.Api.Data;
 
 using Microsoft.EntityFrameworkCore;
@@ -6,6 +7,8 @@ using Microsoft.Extensions.Options;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
+builder.Services.AddGearnixProblemDetails();
+builder.Services.AddExceptionHandler<UnhandledExceptionHandler>();
 
 // The only source of time for the application (Workflow.md §6.6); tests replace it with a fake clock.
 builder.Services.AddSingleton(TimeProvider.System);
@@ -25,6 +28,12 @@ builder.Services.AddHealthChecks()
     .AddCheck<DatabaseHealthCheck>("database", tags: ["ready"], timeout: TimeSpan.FromSeconds(3));
 
 var app = builder.Build();
+
+app.UseExceptionHandler();
+
+// Error responses without a body (unknown route, wrong method) become ProblemDetails.
+app.UseStatusCodePages();
+
 app.MapControllers();
 
 // Liveness: the process is running. Runs no checks, so it never touches the database.
