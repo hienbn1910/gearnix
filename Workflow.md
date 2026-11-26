@@ -617,6 +617,11 @@ All routes are prefixed with `/api`. Every list endpoint is paginated (`Rule.md`
 | `429` | Rate limited |
 
 Every error is a ProblemDetails response with a stable `code` and the request's `traceId`.
+`title` and messages are English; the frontend shows Vietnamese text based on `code`.
+Generic error codes: `validation_failed` (400, with an `errors` map of camelCase field names), `unauthorized` (401),
+`forbidden` (403), `not_found` (404), `method_not_allowed` (405), `conflict` (409, fallback when no business code applies),
+`rate_limited` (429), `internal_error` (500, never exposes exception details), `database_unavailable` (503, temporary
+database failure).
 Business error codes: `out_of_stock`, `invalid_status`, `too_many_pending_orders`, `idempotency_key_reused`,
 `adjustment_below_reserved` (§7.10).
 
@@ -624,6 +629,8 @@ Business error codes: `out_of_stock`, `invalid_status`, `too_many_pending_orders
 
 - Page-based lists: `{ items, page, pageSize, totalCount }` (default `pageSize` 20, maximum 100).
 - Keyset lists: `{ items, nextCursor }` (`nextCursor` is `null` on the last page).
+- Enums are serialized as strings (e.g. `"PendingPayment"`).
+- API documentation: OpenAPI document at `/api/openapi/v1.json` and a Scalar page at `/api/docs`, in `Development` and `Demo` only.
 - No API versioning: there is a single client that we control. A breaking change updates the generated frontend types in the same pull request.
 
 ---
@@ -1063,6 +1070,7 @@ ADRs to write (no later than when the related task is done):
 | 2026-11-23 | Open questions resolved: only WarehouseStaff ship/complete (§3); approved packages added to §4; `CancelReason` replaced by `ExpiredAt` (§6.3); webhook carries `paymentId` (§7.9); error code `adjustment_below_reserved` (§9); L1 load set in requests/s (§11.2); hosting decided at W5-03 (§11.6); `seed` command and per-task seeding (§13.4, §11.6); frontend CI jobs move to W1-09 (§14) | Project owner |
 | 2026-11-26 | CI triggers narrowed to pull requests into `main` and pushes to `main` (§4, §11.6); W1-03 removes the temporary CI allowance for "zero tests ran" (§14) | Project owner |
 | 2026-11-26 | Microsoft.AspNetCore.Mvc.Testing approved for integration tests (§4); health endpoints documented with their full `/api/health/...` paths (§9, §11.3, §11.4, §11.6) | Project owner |
+| 2026-11-26 | Generic error codes, English error text translated by the frontend, enums as strings, API documentation paths (§9) | Project owner |
 
 ---
 
