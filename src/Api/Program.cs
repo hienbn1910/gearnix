@@ -21,8 +21,13 @@ builder.Services.AddControllers(options =>
         options.Filters.Add(new ProducesResponseTypeAttribute<ValidationProblemDetails>(StatusCodes.Status400BadRequest));
         options.Filters.Add(new ProducesResponseTypeAttribute<ProblemDetails>(StatusCodes.Status500InternalServerError));
     })
-    // Enums travel as strings ("PendingPayment"), never as numbers.
-    .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+    .AddJsonOptions(options =>
+    {
+        // Enums travel as strings ("PendingPayment"), never as numbers.
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+        // Malformed-JSON errors get a generic message instead of the serializer's (which names internal types).
+        options.AllowInputFormatterExceptionMessages = false;
+    });
 // The OpenAPI document reads these options, so enums are described as strings there too.
 builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
@@ -60,8 +65,9 @@ app.MapControllers();
 // API documentation, under /api so the reverse proxy exposes it; not in Test or LoadTest.
 if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Demo"))
 {
-    app.MapOpenApi("/api/openapi/{documentName}.json");
-    app.MapScalarApiReference("/api/docs", options => options.WithOpenApiRoutePattern("/api/openapi/{documentName}.json"));
+    app.MapOpenApi("/api/openapi/{documentName}.json").AllowAnonymous();
+    app.MapScalarApiReference("/api/docs", options => options.WithOpenApiRoutePattern("/api/openapi/{documentName}.json"))
+        .AllowAnonymous();
 }
 
 // Liveness: the process is running. Runs no checks, so it never touches the database.

@@ -13,10 +13,11 @@ namespace Gearnix.Api.Common.Validation;
 /// Any failure → 400 ValidationProblemDetails with camelCase field names; the action is not called.
 /// Arguments without a registered validator are skipped.
 /// </summary>
-public sealed class FluentValidationFilter : IAsyncActionFilter
+public sealed class FluentValidationFilter(ProblemDetailsFactory problemDetailsFactory) : IAsyncActionFilter
 {
     public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
     {
+        // Validators are scoped and depend on the argument's runtime type, so they are resolved per request.
         var services = context.HttpContext.RequestServices;
 
         foreach (var argument in context.ActionArguments.Values)
@@ -44,8 +45,7 @@ public sealed class FluentValidationFilter : IAsyncActionFilter
 
         if (!context.ModelState.IsValid)
         {
-            var problem = services.GetRequiredService<ProblemDetailsFactory>()
-                .CreateValidationProblemDetails(context.HttpContext, context.ModelState);
+            var problem = problemDetailsFactory.CreateValidationProblemDetails(context.HttpContext, context.ModelState);
             context.Result = new BadRequestObjectResult(problem);
             return;
         }

@@ -85,7 +85,7 @@ kiểm tra tương thích build PC, thu cũ đổi mới, trả góp, hóa đơn
 | Công cụ EF Core | Microsoft.EntityFrameworkCore.Design + công cụ `dotnet-ef` | Migration và migration bundle |
 | Đặt tên trong database | EFCore.NamingConventions | Tên snake_case (§6); package cộng đồng — kiểm tra đã hỗ trợ EF Core 10 khi cài |
 | Database | PostgreSQL 17 trở lên | Extension `pg_trgm` cho tìm kiếm |
-| Kiểm tra đầu vào | FluentValidation | Bắt buộc kiểm tra ở backend |
+| Kiểm tra đầu vào | FluentValidation (+ FluentValidation.DependencyInjectionExtensions) | Bắt buộc kiểm tra ở backend |
 | Xác thực | ASP.NET Core Identity, xác thực bằng cookie | Cookie HttpOnly, Secure, SameSite; không lưu JWT trên trình duyệt |
 | Lưu Identity và khóa | Microsoft.AspNetCore.Identity.EntityFrameworkCore, Microsoft.AspNetCore.DataProtection.EntityFrameworkCore | User/role và khóa Data Protection lưu trong PostgreSQL (§6.5) |
 | Lỗi | ProblemDetails | Một định dạng lỗi chung cho mọi endpoint |

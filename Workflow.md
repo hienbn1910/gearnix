@@ -86,7 +86,7 @@ e-invoices, email sending, Kubernetes.
 | EF Core tooling | Microsoft.EntityFrameworkCore.Design + `dotnet-ef` tool | Migrations and the migration bundle |
 | Database naming | EFCore.NamingConventions | snake_case names (§6); community package — confirm EF Core 10 support when installing |
 | Database | PostgreSQL 17+ | `pg_trgm` extension for search |
-| Validation | FluentValidation | Backend validation is mandatory |
+| Validation | FluentValidation (+ FluentValidation.DependencyInjectionExtensions) | Backend validation is mandatory |
 | Authentication | ASP.NET Core Identity, cookie authentication | HttpOnly, Secure, SameSite cookies; no JWT in browser storage |
 | Identity & key storage | Microsoft.AspNetCore.Identity.EntityFrameworkCore, Microsoft.AspNetCore.DataProtection.EntityFrameworkCore | Users/roles and Data Protection keys stored in PostgreSQL (§6.5) |
 | Errors | ProblemDetails | One error shape for every endpoint |

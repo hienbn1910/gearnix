@@ -57,4 +57,19 @@ public sealed class ValidationTests
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Contains("\"kind\":\"Conflict\"", body);
     }
+
+    [Fact]
+    public async Task Post_UnknownEnumValue_Returns400WithoutInternalTypeNames()
+    {
+        await using var factory = new GearnixApiFactory(GearnixApiFactory.UnreachableConnectionString);
+        using var client = factory.CreateClient();
+
+        var problem = await ProblemResponse.ReadAsync(await client.PostAsJsonAsync(
+            Path, new { name = "Nova X", quantity = 2, kind = "NotAKind" }, TestContext.Current.CancellationToken));
+
+        Assert.Equal(HttpStatusCode.BadRequest, problem.Status);
+        Assert.Equal("validation_failed", problem.Code);
+        Assert.DoesNotContain("Gearnix.", problem.RawBody);
+        Assert.DoesNotContain("System.", problem.RawBody);
+    }
 }

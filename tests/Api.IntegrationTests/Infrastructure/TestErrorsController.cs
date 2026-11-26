@@ -1,6 +1,7 @@
 using Gearnix.Api.Common.Errors;
 using Gearnix.Api.Data;
 
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,6 +12,7 @@ namespace Gearnix.Api.IntegrationTests.Infrastructure;
 /// endpoints exist. Added to the API only by <see cref="GearnixApiFactory"/>; production code has no test endpoints.
 /// </summary>
 [ApiController]
+[AllowAnonymous]
 [Route("api/test-errors")]
 public sealed class TestErrorsController : ControllerBase
 {
