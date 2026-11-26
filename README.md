@@ -42,12 +42,24 @@ Requirements: [.NET SDK 10](https://dotnet.microsoft.com/download) and Docker wi
    dotnet ef database update --project src/Api
    ```
 
-5. Run the API and check it:
+5. Set the demo account passwords (any values you like; kept outside the repository) and seed the roles and the
+   `staff@demo.local` / `admin@demo.local` accounts. Seeding is idempotent, so it can be run again safely:
+
+   ```bash
+   dotnet user-secrets set "Seed:StaffPassword" "<staff password>" --project src/Api
+   dotnet user-secrets set "Seed:AdminPassword" "<admin password>" --project src/Api
+   dotnet run --project src/Api -- seed
+   ```
+
+6. Run the API and check it:
 
    ```bash
    dotnet run --project src/Api
    curl http://localhost:5296/api/health/ready   # Healthy
    ```
+
+   API documentation (Development only): http://localhost:5296/api/docs. Every `POST`/`PUT`/`PATCH`/`DELETE` request
+   needs the header `X-CSRF: 1`.
 
 Build and test everything with `dotnet build` and `dotnet test`. Integration tests need Docker running: they start their own PostgreSQL container.
 

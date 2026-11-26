@@ -623,7 +623,8 @@ Generic error codes: `validation_failed` (400, with an `errors` map of camelCase
 `rate_limited` (429), `internal_error` (500 and any other 5xx, never exposes exception details), `database_unavailable`
 (503, temporary database failure), `service_unavailable` (any other 503), `bad_request` (any other 4xx, e.g. 415).
 Business error codes: `out_of_stock`, `invalid_status`, `too_many_pending_orders`, `idempotency_key_reused`,
-`adjustment_below_reserved` (§7.10).
+`adjustment_below_reserved` (§7.10), `email_taken` (409, register), `invalid_credentials` (401, login: unknown email,
+wrong password and locked account all look the same), `csrf_header_missing` (403, §11.5).
 
 **Response shapes**
 
@@ -1071,6 +1072,7 @@ ADRs to write (no later than when the related task is done):
 | 2026-11-26 | CI triggers narrowed to pull requests into `main` and pushes to `main` (§4, §11.6); W1-03 removes the temporary CI allowance for "zero tests ran" (§14) | Project owner |
 | 2026-11-26 | Microsoft.AspNetCore.Mvc.Testing approved for integration tests (§4); health endpoints documented with their full `/api/health/...` paths (§9, §11.3, §11.4, §11.6) | Project owner |
 | 2026-11-26 | Generic error codes (incl. fallbacks `conflict`, `bad_request`, `service_unavailable`), English error text translated by the frontend, enums as strings, API documentation paths (§9) | Project owner |
+| 2026-11-26 | Identity: error codes `email_taken`, `invalid_credentials`, `csrf_header_missing` (§9); secure-by-default authorization on controllers instead of a fallback policy, so unknown routes stay `404` (#14) | Project owner |
 
 ---
 
