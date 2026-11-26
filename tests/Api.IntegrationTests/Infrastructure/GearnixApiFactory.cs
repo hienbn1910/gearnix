@@ -8,9 +8,11 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Gearnix.Api.IntegrationTests.Infrastructure;
 
 /// <summary>
-/// Runs the API in memory, in the Test environment, against the given database connection string.
+/// Runs the API in memory against the given database connection string, in the Test environment unless another
+/// environment is given.
 /// </summary>
-public sealed class GearnixApiFactory(string? connectionString) : WebApplicationFactory<Program>
+public sealed class GearnixApiFactory(string? connectionString, string environment = "Test")
+    : WebApplicationFactory<Program>
 {
     /// <summary>A port on the local machine where no PostgreSQL listens.</summary>
     public const string UnreachableConnectionString =
@@ -18,7 +20,7 @@ public sealed class GearnixApiFactory(string? connectionString) : WebApplication
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        builder.UseEnvironment("Test");
+        builder.UseEnvironment(environment);
         // Always set the value, so a Database__ConnectionString environment variable can never leak into a test.
         builder.UseSetting("Database:ConnectionString", connectionString ?? "");
 

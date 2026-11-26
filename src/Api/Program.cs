@@ -6,14 +6,27 @@ using Gearnix.Api.Common.Errors;
 using Gearnix.Api.Common.Validation;
 using Gearnix.Api.Data;
 
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
+using Scalar.AspNetCore;
+
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers(options => options.Filters.Add<FluentValidationFilter>())
+builder.Services.AddControllers(options =>
+    {
+        options.Filters.Add<FluentValidationFilter>();
+        // Every action can fail validation or crash; document both error shapes for the generated frontend types.
+        options.Filters.Add(new ProducesResponseTypeAttribute<ValidationProblemDetails>(StatusCodes.Status400BadRequest));
+        options.Filters.Add(new ProducesResponseTypeAttribute<ProblemDetails>(StatusCodes.Status500InternalServerError));
+    })
     // Enums travel as strings ("PendingPayment"), never as numbers.
     .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+// The OpenAPI document reads these options, so enums are described as strings there too.
+builder.Services.ConfigureHttpJsonOptions(options =>
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+builder.Services.AddOpenApi();
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 builder.Services.AddGearnixProblemDetails();
 builder.Services.AddExceptionHandler<UnhandledExceptionHandler>();
@@ -43,6 +56,13 @@ app.UseExceptionHandler();
 app.UseStatusCodePages();
 
 app.MapControllers();
+
+// API documentation, under /api so the reverse proxy exposes it; not in Test or LoadTest.
+if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Demo"))
+{
+    app.MapOpenApi("/api/openapi/{documentName}.json");
+    app.MapScalarApiReference("/api/docs", options => options.WithOpenApiRoutePattern("/api/openapi/{documentName}.json"));
+}
 
 // Liveness: the process is running. Runs no checks, so it never touches the database.
 app.MapHealthChecks("/api/health/live", new() { Predicate = _ => false })
