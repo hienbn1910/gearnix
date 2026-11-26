@@ -96,7 +96,7 @@ kiểm tra tương thích build PC, thu cũ đổi mới, trả góp, hóa đơn
 | Frontend | React + TypeScript + Vite | Hai app: `storefront` và `admin` |
 | Thư viện frontend | React Router, TanStack Query, Tailwind CSS, Zod | Zod chỉ dùng cho form |
 | Kiểu dữ liệu API | openapi-typescript | Sinh từ tài liệu OpenAPI của backend |
-| Kiểm thử | xUnit, Testcontainers.PostgreSql | Integration test chạy trên PostgreSQL thật |
+| Kiểm thử | xUnit, Testcontainers.PostgreSql, Microsoft.AspNetCore.Mvc.Testing | Integration test gọi API trong bộ nhớ qua HTTP (`WebApplicationFactory`), chạy trên PostgreSQL thật |
 | Dữ liệu mẫu | Bogus | Được project API tham chiếu; bộ seed chỉ chạy ở `Development`, `Demo` và `LoadTest` (§13.4) |
 | Load test | k6 | |
 | Môi trường cục bộ | Docker Compose | |
@@ -599,8 +599,8 @@ Mọi route có tiền tố `/api`. Mọi endpoint trả danh sách đều phân
 | GET | `/admin/orders` | WarehouseStaff, Admin | Lọc theo trạng thái |
 | POST | `/admin/orders/{id}/ship` | WarehouseStaff | Chỉ đơn `Paid`; Admin không được (tách nhiệm vụ, §3) |
 | POST | `/admin/orders/{id}/complete` | WarehouseStaff | Chỉ đơn `Shipped`; Admin không được (§3) |
-| GET | `/health/live` | Anonymous | Tiến trình đang chạy (Docker healthcheck) |
-| GET | `/health/ready` | Anonymous | Kết nối được database (giám sát uptime, kiểm tra khi deploy) |
+| GET | `/health/live` | Anonymous | Đường dẫn đầy đủ `/api/health/live`. Tiến trình đang chạy (Docker healthcheck); không bao giờ đụng tới database |
+| GET | `/health/ready` | Anonymous | Đường dẫn đầy đủ `/api/health/ready`. Kết nối được database: `200`, ngược lại `503`; kiểm tra tối đa 3 giây (giám sát uptime, kiểm tra khi deploy) |
 | POST | `/assistant/chat` | Customer | **Điểm cộng B1**; có rate limit; bật/tắt bằng feature flag |
 
 **Mã trạng thái**
@@ -707,7 +707,7 @@ Các mã lỗi nghiệp vụ: `out_of_stock`, `invalid_status`, `too_many_pendin
 | Webhook không bao giờ tới | Đơn hết hạn và hàng được trả lại; webhook tới muộn dẫn tới `RefundRequired` |
 | Job hết hạn bị lỗi hoặc server khởi động lại | Mọi trạng thái nằm trong database; lần chạy sau tiếp tục |
 | Tắt ứng dụng khi job đang chạy | Tôn trọng `CancellationToken`; mỗi đơn một transaction |
-| Database không truy cập được | `/health/ready` báo lỗi; API trả `503` dạng ProblemDetails; ứng dụng vẫn khởi động được (không làm việc với database lúc khởi động) |
+| Database không truy cập được | `/api/health/ready` báo lỗi; API trả `503` dạng ProblemDetails; ứng dụng vẫn khởi động được (không làm việc với database lúc khởi động) |
 | Deadlock hoặc lỗi serialization (`40P01`, `40001`) | Chạy lại toàn bộ transaction tối đa 3 lần, chờ một khoảng ngắn ngẫu nhiên (đặt hàng, xuất kho, hết hạn) |
 | Đầy ổ cứng | Ngăn bằng xoay vòng log và giới hạn thời gian giữ backup (§11.6) |
 | Deploy lỗi | Deploy lại image tag của phiên bản trước (§11.6) |
@@ -726,9 +726,9 @@ Các mã lỗi nghiệp vụ: `out_of_stock`, `invalid_status`, `too_many_pendin
 - Mỗi request có một trace id. Trace id xuất hiện trong mọi dòng log và trong mọi phản hồi ProblemDetails dưới dạng `traceId`,
   để khi người dùng báo lỗi có thể tìm đúng log.
 - Ghi log các sự kiện nghiệp vụ: đơn được tạo / hết hạn / thanh toán / xuất kho, nhập kho / điều chỉnh kho, webhook bị từ chối.
-- `/health/live` phục vụ healthcheck của Docker (chỉ khởi động lại khi tiến trình bị treo, không phải khi database lỗi);
-  `/health/ready` phục vụ giám sát và bước kiểm tra khi deploy.
-- Một dịch vụ giám sát uptime bên ngoài (dịch vụ miễn phí nào cũng được) kiểm tra `/health/ready` mỗi 5 phút và báo cho chủ dự án.
+- `/api/health/live` phục vụ healthcheck của Docker (chỉ khởi động lại khi tiến trình bị treo, không phải khi database lỗi);
+  `/api/health/ready` phục vụ giám sát và bước kiểm tra khi deploy. Cả hai nằm dưới `/api`, nên Caddy chuyển tiếp được mà không cần thêm luật.
+- Một dịch vụ giám sát uptime bên ngoài (dịch vụ miễn phí nào cũng được) kiểm tra `/api/health/ready` mỗi 5 phút và báo cho chủ dự án.
 - Trace và metric bằng OpenTelemetry là tùy chọn, chỉ làm nếu còn thời gian (W5-02).
 
 ### 11.5 Thiết kế bảo mật
@@ -760,7 +760,7 @@ Các mã lỗi nghiệp vụ: `out_of_stock`, `invalid_status`, `too_many_pendin
 - **CI** (mỗi pull request vào `main` và mỗi lần push lên `main`; push lên branch tính năng đã được kiểm tra qua pull request của nó): build, test, lint, kiểm tra lỗ hổng thư viện.
 - **Image:** mỗi lần merge vào `main`, Docker image được build, gắn tag bằng SHA của commit git và đẩy lên GitHub Container Registry.
 - **Deploy** (kích hoạt thủ công bằng `workflow_dispatch`, qua SSH): backup database → `docker compose pull` → chạy
-  **migration bundle** của EF Core → chạy lệnh `seed` (idempotent, §13.4) → `docker compose up -d` → chờ `/health/ready`.
+  **migration bundle** của EF Core → chạy lệnh `seed` (idempotent, §13.4) → `docker compose up -d` → chờ `/api/health/ready`.
 - **Migration** không bao giờ tự chạy khi ứng dụng khởi động. Migration phải tương thích ngược với phiên bản ứng dụng
   trước đó (thêm cột mới ở dạng nullable trước; chỉ xóa cột cũ ở lần phát hành sau), để quay lui được.
 - **Quay lui:** deploy lại image tag của phiên bản trước. Khôi phục backup là phương án cuối cùng.
@@ -911,7 +911,7 @@ Mọi task đi theo quy trình đầy đủ ở `Rule.md` §1.
   Job cho frontend được thêm ở W1-09, khi các app đã tồn tại.
   *Xong khi:* một pull request hiện dấu tích xanh.
 - [ ] **W1-03** (#10) Nền tảng dữ liệu: `AppDbContext`, đặt tên snake_case, quy ước UTC và decimal, `TimeProvider`,
-  cấu hình connection pool, kiểm tra options khi khởi động, migration đầu tiên, `/health/live` và `/health/ready`.
+  cấu hình connection pool, kiểm tra options khi khởi động, migration đầu tiên, `/api/health/live` và `/api/health/ready`.
   Đồng thời gỡ tùy chọn CI `--ignore-exit-code 8` khi đã có test đầu tiên (từ W1-02, #8).
 - [ ] **W1-04** Xử lý lỗi và tài liệu API: ProblemDetails có `code` và `traceId`, nối FluentValidation,
   kiểu phản hồi danh sách chuẩn (§9), OpenAPI + Scalar.
@@ -1063,6 +1063,7 @@ Các ADR cần viết (chậm nhất là khi xong task liên quan):
 | 2026-11-21 | Viết lại văn phong `Workflow.md` và `Workflow.vi.md`: chỉ sửa câu chữ, cấu trúc và bảng; không đổi phạm vi hay quy tắc; câu hỏi còn mở được đánh dấu **[Cần xác nhận]** và gom ở §20 | Chủ dự án |
 | 2026-11-23 | Chốt các câu hỏi còn mở: chỉ WarehouseStaff xuất kho/hoàn tất đơn (§3); thêm các package đã duyệt vào §4; thay `CancelReason` bằng `ExpiredAt` (§6.3); webhook mang `paymentId` (§7.9); mã lỗi `adjustment_below_reserved` (§9); tải L1 đặt theo request/giây (§11.2); hosting quyết ở W5-03 (§11.6); lệnh `seed` và seed theo từng task (§13.4, §11.6); job CI frontend chuyển sang W1-09 (§14) | Chủ dự án |
 | 2026-11-26 | Thu hẹp điều kiện chạy CI: pull request vào `main` và push lên `main` (§4, §11.6); W1-03 gỡ tùy chọn tạm cho phép "không có test nào chạy" trong CI (§14) | Chủ dự án |
+| 2026-11-26 | Duyệt Microsoft.AspNetCore.Mvc.Testing cho integration test (§4); ghi rõ đường dẫn đầy đủ `/api/health/...` của các endpoint health (§9, §11.3, §11.4, §11.6) | Chủ dự án |
 
 ---
 

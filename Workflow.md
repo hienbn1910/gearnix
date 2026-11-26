@@ -97,7 +97,7 @@ e-invoices, email sending, Kubernetes.
 | Frontend | React + TypeScript + Vite | Two apps: `storefront` and `admin` |
 | Frontend libraries | React Router, TanStack Query, Tailwind CSS, Zod | Zod for forms only |
 | API types | openapi-typescript | Generated from the backend OpenAPI document |
-| Tests | xUnit, Testcontainers.PostgreSql | Integration tests run against a real PostgreSQL |
+| Tests | xUnit, Testcontainers.PostgreSql, Microsoft.AspNetCore.Mvc.Testing | Integration tests call the API in memory over HTTP (`WebApplicationFactory`) against a real PostgreSQL |
 | Seed data | Bogus | Referenced by the API project; the seeder runs only in `Development`, `Demo` and `LoadTest` (§13.4) |
 | Load tests | k6 | |
 | Local environment | Docker Compose | |
@@ -600,8 +600,8 @@ All routes are prefixed with `/api`. Every list endpoint is paginated (`Rule.md`
 | GET | `/admin/orders` | WarehouseStaff, Admin | Filter by status |
 | POST | `/admin/orders/{id}/ship` | WarehouseStaff | `Paid` only; not Admin (separation of duties, §3) |
 | POST | `/admin/orders/{id}/complete` | WarehouseStaff | `Shipped` only; not Admin (§3) |
-| GET | `/health/live` | Anonymous | Process is running (Docker healthcheck) |
-| GET | `/health/ready` | Anonymous | Database is reachable (uptime monitor, deploy check) |
+| GET | `/health/live` | Anonymous | Full path `/api/health/live`. Process is running (Docker healthcheck); never touches the database |
+| GET | `/health/ready` | Anonymous | Full path `/api/health/ready`. Database is reachable: `200`, otherwise `503`; 3-second check timeout (uptime monitor, deploy check) |
 | POST | `/assistant/chat` | Customer | **Bonus B1**; rate limited; behind a feature flag |
 
 **Status codes**
@@ -707,7 +707,7 @@ These are **targets to verify, not measured results**. After the first k6 run, a
 | Webhook never arrives | The order expires and stock is released; a late webhook leads to `RefundRequired` |
 | Expiry job crashes or server restarts | All state is in the database; the next run continues |
 | Shutdown during a job run | `CancellationToken` is honored; one transaction per order |
-| Database unavailable | `/health/ready` reports unhealthy; the API returns `503` ProblemDetails; the app still starts (no database work at startup) |
+| Database unavailable | `/api/health/ready` reports unhealthy; the API returns `503` ProblemDetails; the app still starts (no database work at startup) |
 | Deadlock or serialization failure (`40P01`, `40001`) | Retry the whole transaction up to 3 times with a short random delay (checkout, shipment, expiry) |
 | Disk full | Prevented by log rotation and backup retention (§11.6) |
 | Bad deployment | Redeploy the previous image tag (§11.6) |
@@ -726,9 +726,9 @@ These are **targets to verify, not measured results**. After the first k6 run, a
 - Every request has a trace id. It appears in every log line and in every ProblemDetails response as `traceId`,
   so an error reported by a user can be located in the logs.
 - Business events are logged: order created / expired / paid / shipped, stock received / adjusted, webhook rejected.
-- `/health/live` serves Docker's healthcheck (restart only if the process is stuck, not when the database is down);
-  `/health/ready` serves monitoring and the deploy check.
-- An external uptime monitor (any free service) checks `/health/ready` every 5 minutes and alerts the project owner.
+- `/api/health/live` serves Docker's healthcheck (restart only if the process is stuck, not when the database is down);
+  `/api/health/ready` serves monitoring and the deploy check. Both sit under `/api`, so Caddy exposes them without an extra rule.
+- An external uptime monitor (any free service) checks `/api/health/ready` every 5 minutes and alerts the project owner.
 - OpenTelemetry traces and metrics are optional, only if time allows (W5-02).
 
 ### 11.5 Security design
@@ -760,7 +760,7 @@ These are **targets to verify, not measured results**. After the first k6 run, a
 - **CI** (every pull request into `main` and every push to `main`; feature-branch pushes are covered by their pull request): build, tests, lint, vulnerability checks.
 - **Images:** on every merge to `main`, Docker images are built, tagged with the git commit SHA and pushed to GitHub Container Registry.
 - **Deploy** (manual `workflow_dispatch`, over SSH): back up the database → `docker compose pull` → run the EF Core
-  **migration bundle** → run the `seed` command (idempotent, §13.4) → `docker compose up -d` → wait for `/health/ready`.
+  **migration bundle** → run the `seed` command (idempotent, §13.4) → `docker compose up -d` → wait for `/api/health/ready`.
 - **Migrations** never run automatically at application startup. They must be backward compatible with the previous
   application version (add new columns as nullable first; drop old columns only in a later release), so rollback works.
 - **Rollback:** redeploy the previous image tag. Restoring a backup is the last resort.
@@ -911,7 +911,7 @@ Every task follows the full process in `Rule.md` §1.
   Frontend jobs are added in W1-09, once the apps exist.
   *Done when:* a pull request shows green checks.
 - [ ] **W1-03** (#10) Data foundation: `AppDbContext`, snake_case naming, UTC and decimal conventions, `TimeProvider`,
-  connection pool settings, options validation at startup, first migration, `/health/live` and `/health/ready`.
+  connection pool settings, options validation at startup, first migration, `/api/health/live` and `/api/health/ready`.
   Also remove the CI allowance `--ignore-exit-code 8` once the first test exists (from W1-02, #8).
 - [ ] **W1-04** Error handling and API docs: ProblemDetails with `code` and `traceId`, FluentValidation wiring,
   standard list response types (§9), OpenAPI + Scalar.
@@ -1062,6 +1062,7 @@ ADRs to write (no later than when the related task is done):
 | 2026-11-21 | Editorial rewrite of `Workflow.md` and `Workflow.vi.md`: wording, structure and tables only; no change to scope or rules; open questions marked **[To be confirmed]** and collected in §20 | Project owner |
 | 2026-11-23 | Open questions resolved: only WarehouseStaff ship/complete (§3); approved packages added to §4; `CancelReason` replaced by `ExpiredAt` (§6.3); webhook carries `paymentId` (§7.9); error code `adjustment_below_reserved` (§9); L1 load set in requests/s (§11.2); hosting decided at W5-03 (§11.6); `seed` command and per-task seeding (§13.4, §11.6); frontend CI jobs move to W1-09 (§14) | Project owner |
 | 2026-11-26 | CI triggers narrowed to pull requests into `main` and pushes to `main` (§4, §11.6); W1-03 removes the temporary CI allowance for "zero tests ran" (§14) | Project owner |
+| 2026-11-26 | Microsoft.AspNetCore.Mvc.Testing approved for integration tests (§4); health endpoints documented with their full `/api/health/...` paths (§9, §11.3, §11.4, §11.6) | Project owner |
 
 ---
 

@@ -27,13 +27,29 @@ Requirements: [.NET SDK 10](https://dotnet.microsoft.com/download) and Docker wi
    docker compose up -d
    ```
 
-3. Run the API:
+3. Store the connection string in user-secrets (kept outside the repository), using the values from `.env`:
+
+   ```bash
+   dotnet user-secrets set "Database:ConnectionString" \
+     "Host=127.0.0.1;Port=<POSTGRES_PORT>;Database=gearnix;Username=gearnix;Password=<POSTGRES_PASSWORD>" \
+     --project src/Api
+   ```
+
+4. Install the repository's tools and apply the database migrations:
+
+   ```bash
+   dotnet tool restore
+   dotnet ef database update --project src/Api
+   ```
+
+5. Run the API and check it:
 
    ```bash
    dotnet run --project src/Api
+   curl http://localhost:5296/api/health/ready   # Healthy
    ```
 
-Build and test everything with `dotnet build` and `dotnet test`.
+Build and test everything with `dotnet build` and `dotnet test`. Integration tests need Docker running: they start their own PostgreSQL container.
 
 ## Live demo
 
