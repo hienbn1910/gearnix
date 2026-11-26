@@ -619,8 +619,8 @@ Mọi lỗi là phản hồi ProblemDetails có `code` cố định và `traceId
 `title` và câu báo lỗi bằng tiếng Anh; frontend hiển thị câu tiếng Việt dựa trên `code`.
 Các mã lỗi chung: `validation_failed` (400, kèm `errors` theo tên field dạng camelCase), `unauthorized` (401),
 `forbidden` (403), `not_found` (404), `method_not_allowed` (405), `conflict` (409, dùng khi không có mã nghiệp vụ nào),
-`rate_limited` (429), `internal_error` (500, không bao giờ lộ chi tiết exception), `database_unavailable` (503, lỗi
-database tạm thời).
+`rate_limited` (429), `internal_error` (500 và mọi 5xx khác, không bao giờ lộ chi tiết exception), `database_unavailable`
+(503, lỗi database tạm thời), `service_unavailable` (503 khác), `bad_request` (mọi 4xx khác, ví dụ 415).
 Các mã lỗi nghiệp vụ: `out_of_stock`, `invalid_status`, `too_many_pending_orders`, `idempotency_key_reused`,
 `adjustment_below_reserved` (§7.10).
 
@@ -1071,7 +1071,7 @@ Các ADR cần viết (chậm nhất là khi xong task liên quan):
 | 2026-11-23 | Chốt các câu hỏi còn mở: chỉ WarehouseStaff xuất kho/hoàn tất đơn (§3); thêm các package đã duyệt vào §4; thay `CancelReason` bằng `ExpiredAt` (§6.3); webhook mang `paymentId` (§7.9); mã lỗi `adjustment_below_reserved` (§9); tải L1 đặt theo request/giây (§11.2); hosting quyết ở W5-03 (§11.6); lệnh `seed` và seed theo từng task (§13.4, §11.6); job CI frontend chuyển sang W1-09 (§14) | Chủ dự án |
 | 2026-11-26 | Thu hẹp điều kiện chạy CI: pull request vào `main` và push lên `main` (§4, §11.6); W1-03 gỡ tùy chọn tạm cho phép "không có test nào chạy" trong CI (§14) | Chủ dự án |
 | 2026-11-26 | Duyệt Microsoft.AspNetCore.Mvc.Testing cho integration test (§4); ghi rõ đường dẫn đầy đủ `/api/health/...` của các endpoint health (§9, §11.3, §11.4, §11.6) | Chủ dự án |
-| 2026-11-26 | Mã lỗi chung, câu báo lỗi tiếng Anh do frontend dịch, enum dạng chuỗi, đường dẫn tài liệu API (§9) | Chủ dự án |
+| 2026-11-26 | Mã lỗi chung (gồm các mã dự phòng `conflict`, `bad_request`, `service_unavailable`), câu báo lỗi tiếng Anh do frontend dịch, enum dạng chuỗi, đường dẫn tài liệu API (§9) | Chủ dự án |
 
 ---
 

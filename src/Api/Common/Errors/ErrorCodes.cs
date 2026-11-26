@@ -7,6 +7,7 @@ namespace Gearnix.Api.Common.Errors;
 public static class ErrorCodes
 {
     public const string ValidationFailed = "validation_failed";
+    public const string BadRequest = "bad_request";
     public const string Unauthorized = "unauthorized";
     public const string Forbidden = "forbidden";
     public const string NotFound = "not_found";
@@ -14,9 +15,13 @@ public static class ErrorCodes
     public const string Conflict = "conflict";
     public const string RateLimited = "rate_limited";
     public const string InternalError = "internal_error";
+    public const string ServiceUnavailable = "service_unavailable";
     public const string DatabaseUnavailable = "database_unavailable";
 
-    /// <summary>The generic code for a status, used when nothing more specific set one.</summary>
+    /// <summary>
+    /// The generic code for a status, used when nothing more specific set one.
+    /// Unlisted client errors (4xx) → "bad_request"; unlisted server errors (5xx) → "internal_error".
+    /// </summary>
     public static string ForStatus(int status) => status switch
     {
         StatusCodes.Status400BadRequest => ValidationFailed,
@@ -26,7 +31,8 @@ public static class ErrorCodes
         StatusCodes.Status405MethodNotAllowed => MethodNotAllowed,
         StatusCodes.Status409Conflict => Conflict,
         StatusCodes.Status429TooManyRequests => RateLimited,
-        StatusCodes.Status503ServiceUnavailable => DatabaseUnavailable,
+        StatusCodes.Status503ServiceUnavailable => ServiceUnavailable,
+        >= 400 and < 500 => BadRequest,
         _ => InternalError,
     };
 }
