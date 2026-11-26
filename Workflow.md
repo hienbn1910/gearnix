@@ -910,10 +910,10 @@ Every task follows the full process in `Rule.md` §1.
 - [x] **W1-02** (#8) CI with GitHub Actions: backend build and tests, .NET vulnerability check; Dependabot.
   Frontend jobs are added in W1-09, once the apps exist.
   *Done when:* a pull request shows green checks.
-- [ ] **W1-03** (#10) Data foundation: `AppDbContext`, snake_case naming, UTC and decimal conventions, `TimeProvider`,
+- [x] **W1-03** (#10) Data foundation: `AppDbContext`, snake_case naming, UTC and decimal conventions, `TimeProvider`,
   connection pool settings, options validation at startup, first migration, `/api/health/live` and `/api/health/ready`.
   Also remove the CI allowance `--ignore-exit-code 8` once the first test exists (from W1-02, #8).
-- [ ] **W1-04** Error handling and API docs: ProblemDetails with `code` and `traceId`, FluentValidation wiring,
+- [ ] **W1-04** (#12) Error handling and API docs: ProblemDetails with `code` and `traceId`, FluentValidation wiring,
   standard list response types (§9), OpenAPI + Scalar.
 - [ ] **W1-05** Identity: register, login, logout, me; cookie settings (§11.5); `401`/`403` instead of redirects;
   CSRF header check; lockout; Data Protection keys in the database; the `seed` command with roles and the
