@@ -6,6 +6,7 @@ public sealed class ErrorResultsTests
 {
     [Theory]
     [InlineData(ErrorKind.Validation, 400)]
+    [InlineData(ErrorKind.Unauthorized, 401)]
     [InlineData(ErrorKind.NotFound, 404)]
     [InlineData(ErrorKind.Conflict, 409)]
     [InlineData(ErrorKind.Forbidden, 403)]

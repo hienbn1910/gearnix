@@ -13,8 +13,10 @@ public static class IdentitySetup
 
     public static IServiceCollection AddIdentityModule(this IServiceCollection services)
     {
+        // All Identity cookie schemes are registered because SignInManager.SignOutAsync signs out of each of them;
+        // only the application cookie is ever issued.
         services.AddAuthentication(IdentityConstants.ApplicationScheme)
-            .AddCookie(IdentityConstants.ApplicationScheme, cookie =>
+            .AddIdentityCookies(cookies => cookies.ApplicationCookie?.Configure(cookie =>
             {
                 cookie.Cookie.Name = AuthCookieName;
                 cookie.Cookie.HttpOnly = true; // scripts cannot read it
@@ -34,7 +36,7 @@ public static class IdentitySetup
                     context.Response.StatusCode = StatusCodes.Status403Forbidden;
                     return Task.CompletedTask;
                 };
-            });
+            }));
 
         services.AddIdentityCore<AppUser>(options =>
             {
@@ -63,6 +65,8 @@ public static class IdentitySetup
 
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUser, CurrentUser>();
+        services.AddScoped<AuthService>();
+        services.AddScoped<IdentitySeeder>();
         return services;
     }
 }

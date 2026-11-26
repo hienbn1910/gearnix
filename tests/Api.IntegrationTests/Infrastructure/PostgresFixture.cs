@@ -1,6 +1,8 @@
 using Gearnix.Api.Data;
+using Gearnix.Api.Modules.Identity;
 
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 using Testcontainers.PostgreSql;
 
@@ -10,7 +12,7 @@ namespace Gearnix.Api.IntegrationTests.Infrastructure;
 
 /// <summary>
 /// One real PostgreSQL container shared by the whole integration test run.
-/// Migrations are applied once here, the way deployment applies them, never at application startup.
+/// Migrations and the seed are applied once here, the way deployment applies them, never at application startup.
 /// </summary>
 public sealed class PostgresFixture : IAsyncLifetime
 {
@@ -25,6 +27,11 @@ public sealed class PostgresFixture : IAsyncLifetime
         var options = new DbContextOptionsBuilder<AppDbContext>().UseNpgsql(ConnectionString).Options;
         await using var dbContext = new AppDbContext(options);
         await dbContext.Database.MigrateAsync();
+
+        // The same seeder the seed command runs; in the Test environment it creates the roles only.
+        await using var factory = new GearnixApiFactory(ConnectionString);
+        await using var scope = factory.Services.CreateAsyncScope();
+        await scope.ServiceProvider.GetRequiredService<IdentitySeeder>().SeedAsync(CancellationToken.None);
     }
 
     public async ValueTask DisposeAsync() => await _container.DisposeAsync();

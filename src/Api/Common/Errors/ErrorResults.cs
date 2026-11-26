@@ -10,6 +10,7 @@ public static class ErrorResults
     public static int StatusCodeFor(ErrorKind kind) => kind switch
     {
         ErrorKind.Validation => StatusCodes.Status400BadRequest,
+        ErrorKind.Unauthorized => StatusCodes.Status401Unauthorized,
         ErrorKind.NotFound => StatusCodes.Status404NotFound,
         ErrorKind.Conflict => StatusCodes.Status409Conflict,
         ErrorKind.Forbidden => StatusCodes.Status403Forbidden,
@@ -22,7 +23,8 @@ public static class ErrorResults
     public static ObjectResult ToProblem(this ControllerBase controller, Error error)
     {
         var status = StatusCodeFor(error.Kind);
-        var problem = controller.ProblemDetailsFactory.CreateProblemDetails(controller.HttpContext, statusCode: status);
+        var problem = controller.ProblemDetailsFactory.CreateProblemDetails(
+            controller.HttpContext, statusCode: status, detail: error.Detail);
         problem.Extensions["code"] = error.Code;
         return new ObjectResult(problem) { StatusCode = status };
     }

@@ -5,4 +5,5 @@ namespace Gearnix.Api.Common.Errors;
 /// </summary>
 /// <param name="Code">Stable code sent to the client, e.g. "out_of_stock" (Workflow.md §9).</param>
 /// <param name="Kind">Decides the HTTP status.</param>
-public sealed record Error(string Code, ErrorKind Kind);
+/// <param name="Detail">Optional English message for the ProblemDetails "detail" field.</param>
+public sealed record Error(string Code, ErrorKind Kind, string? Detail = null);

@@ -52,7 +52,8 @@ public sealed class GearnixApiFactory(string? connectionString, string environme
     /// </summary>
     public HttpClient CreateApiClient()
     {
-        var client = CreateClient();
+        // HTTPS, so the Secure auth cookie is stored and sent back like in a browser.
+        var client = CreateClient(new WebApplicationFactoryClientOptions { BaseAddress = new Uri("https://localhost") });
         client.DefaultRequestHeaders.Add("X-CSRF", "1");
         return client;
     }
