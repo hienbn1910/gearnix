@@ -1,3 +1,4 @@
+using Gearnix.Api.Common.Hosting;
 using Gearnix.Api.Modules.Identity;
 
 namespace Gearnix.Api.Data.Seeding;
@@ -12,7 +13,8 @@ public static class SeedCommand
     public const string Argument = "seed";
 
     /// <summary>The seeder runs only here (Workflow.md §4); Test seeds its own data.</summary>
-    private static readonly string[] AllowedEnvironments = ["Development", "Demo", "LoadTest"];
+    private static readonly string[] AllowedEnvironments =
+        [Environments.Development, AppEnvironments.Demo, AppEnvironments.LoadTest];
 
     public static bool IsRequested(string[] args) => args is [Argument];
 

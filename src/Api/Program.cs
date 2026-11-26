@@ -80,6 +80,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 // Secure by default: every controller action requires a signed-in user unless it has [AllowAnonymous].
+// This covers controllers only; any endpoint mapped with app.Map... must declare its own authorization.
 app.MapControllers().RequireAuthorization();
 
 // API documentation, under /api so the reverse proxy exposes it; not in Test or LoadTest.

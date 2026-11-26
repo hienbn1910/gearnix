@@ -715,7 +715,7 @@ These are **targets to verify, not measured results**. After the first k6 run, a
 | Webhook never arrives | The order expires and stock is released; a late webhook leads to `RefundRequired` |
 | Expiry job crashes or server restarts | All state is in the database; the next run continues |
 | Shutdown during a job run | `CancellationToken` is honored; one transaction per order |
-| Database unavailable | `/api/health/ready` reports unhealthy; the API returns `503` ProblemDetails; the app still starts (no database work at startup) |
+| Database unavailable | `/api/health/ready` reports unhealthy; the API returns `503` ProblemDetails; the app still starts (no database work at startup, except that Data Protection tries to load its keys and only logs an error, ADR 0004) |
 | Deadlock or serialization failure (`40P01`, `40001`) | Retry the whole transaction up to 3 times with a short random delay (checkout, shipment, expiry) |
 | Disk full | Prevented by log rotation and backup retention (§11.6) |
 | Bad deployment | Redeploy the previous image tag (§11.6) |
@@ -1072,7 +1072,7 @@ ADRs to write (no later than when the related task is done):
 | 2026-11-26 | CI triggers narrowed to pull requests into `main` and pushes to `main` (§4, §11.6); W1-03 removes the temporary CI allowance for "zero tests ran" (§14) | Project owner |
 | 2026-11-26 | Microsoft.AspNetCore.Mvc.Testing approved for integration tests (§4); health endpoints documented with their full `/api/health/...` paths (§9, §11.3, §11.4, §11.6) | Project owner |
 | 2026-11-26 | Generic error codes (incl. fallbacks `conflict`, `bad_request`, `service_unavailable`), English error text translated by the frontend, enums as strings, API documentation paths (§9) | Project owner |
-| 2026-11-26 | Identity: error codes `email_taken`, `invalid_credentials`, `csrf_header_missing` (§9); secure-by-default authorization on controllers instead of a fallback policy, so unknown routes stay `404` (#14) | Project owner |
+| 2026-11-26 | Identity: error codes `email_taken`, `invalid_credentials`, `csrf_header_missing` (§9); secure-by-default authorization on controllers instead of a fallback policy, so unknown routes stay `404`; Data Protection loads its keys from the database at startup (§11.3) (#14) | Project owner |
 
 ---
 

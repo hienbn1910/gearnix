@@ -40,10 +40,14 @@ public sealed class AuthService(
             catch (DbUpdateException exception) when (exception.InnerException is PostgresException
             {
                 SqlState: PostgresErrorCodes.UniqueViolation,
+                ConstraintName: UserNameUniqueIndex,
             })
             {
                 // Two registrations raced past Identity's "email already used?" check; the unique index on the
-                // normalized user name (= email) stopped the second one. Disposing the transaction rolls it back.
+                // normalized user name (= email) stopped the second one. Roll back, and forget the failed insert so
+                // nothing else in this request tries to save it again (Workflow.md §11.3).
+                await transaction.RollbackAsync(cancellationToken);
+                dbContext.ChangeTracker.Clear();
                 return IdentityErrors.EmailTaken;
             }
 
@@ -80,6 +84,13 @@ public sealed class AuthService(
         var check = await signInManager.CheckPasswordSignInAsync(user, request.Password, lockoutOnFailure: true);
         if (!check.Succeeded)
         {
+            if (check.IsLockedOut)
+            {
+                // Identity checks the lock before the password, so a locked account would answer much faster.
+                // Pay for a hash here too, so timing reveals neither the lock nor the account.
+                userManager.PasswordHasher.HashPassword(TimingDummyUser, request.Password);
+            }
+
             return IdentityErrors.InvalidCredentials;
         }
 
@@ -99,6 +110,9 @@ public sealed class AuthService(
 
         return await ToMeAsync(user);
     }
+
+    /// <summary>Identity's unique index on the normalized user name (= email).</summary>
+    private const string UserNameUniqueIndex = "UserNameIndex";
 
     private static readonly AppUser TimingDummyUser = new() { FullName = "timing" };
 

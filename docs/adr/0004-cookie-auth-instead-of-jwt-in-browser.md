@@ -18,4 +18,9 @@ The storefront and admin are single-page apps served from the same domain as the
 - **No redirects.** The cookie handler's default redirects to a login page are replaced by `401`/`403` ProblemDetails, because an API client cannot follow an HTML login redirect.
 - **Single domain.** The API and the frontends must share a site (Caddy in production, the Vite proxy in development); cross-site use of the cookie is impossible by design.
 - **Startup database access.** Because the keys are in the database, the Data Protection key ring loads them at startup. If PostgreSQL is down, startup only logs an error: the API still starts, `/api/health/live` answers, and the keys are retried on first use.
-- **Not revealing which emails exist.** Sign-in returns the same `401 invalid_credentials` for an unknown email, a wrong password and a locked account. Unknown emails still pay for a password hash, so timing does not reveal which emails exist. Registration necessarily reveals an existing email (`409 email_taken`); that trade-off is accepted for usability, and rate limiting (W4-06) slows down bulk probing.
+- **Known Identity limits.**
+  - Signing out deletes the cookie in the browser. A copied cookie stays valid until it expires or until the
+    security stamp is re-checked (every 30 minutes by default).
+  - Parallel wrong-password attempts can under-count failures, because the counter update uses optimistic
+    concurrency, so an attacker may get a few more than 5 guesses. Rate limiting (W4-06) bounds this.
+- **Not revealing which emails exist.** Sign-in returns the same `401 invalid_credentials` for an unknown email, a wrong password and a locked account. Unknown emails and locked accounts still pay for a password hash, so timing does not reveal which emails exist. Registration necessarily reveals an existing email (`409 email_taken`); that trade-off is accepted for usability, and rate limiting (W4-06) slows down bulk probing.

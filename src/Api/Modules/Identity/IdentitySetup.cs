@@ -53,6 +53,9 @@ public static class IdentitySetup
                 options.Lockout.AllowedForNewUsers = true;
 
                 options.User.RequireUniqueEmail = true;
+                // The user name is the email, already checked by the validator; Identity's default character list
+                // (letters, digits, -._@+) would reject valid emails such as o'neil@x.vn with a 500.
+                options.User.AllowedUserNameCharacters = ""; // empty = no character restriction
             })
             .AddRoles<IdentityRole<Guid>>()
             .AddEntityFrameworkStores<AppDbContext>()

@@ -40,11 +40,12 @@ public sealed class CsrfHeaderMiddleware(RequestDelegate next, IProblemDetailsSe
     }
 
     private static bool RequiresCsrfHeader(HttpRequest request) =>
-        IsStateChanging(request.Method)
+        !IsSafe(request.Method)
         && request.Path.StartsWithSegments(ApiPath)
-        && !request.Path.StartsWithSegments(PaymentWebhookPath);
+        && !request.Path.Equals(PaymentWebhookPath, StringComparison.OrdinalIgnoreCase); // exactly this path only
 
-    private static bool IsStateChanging(string method) =>
-        HttpMethods.IsPost(method) || HttpMethods.IsPut(method)
-        || HttpMethods.IsPatch(method) || HttpMethods.IsDelete(method);
+    // An allowlist of read-only methods: any other method, including unusual ones, needs the header.
+    private static bool IsSafe(string method) =>
+        HttpMethods.IsGet(method) || HttpMethods.IsHead(method)
+        || HttpMethods.IsOptions(method) || HttpMethods.IsTrace(method);
 }

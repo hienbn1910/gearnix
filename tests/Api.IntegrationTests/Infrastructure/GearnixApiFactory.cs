@@ -1,5 +1,7 @@
 using FluentValidation;
 
+using Gearnix.Api.Common.Security;
+
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
@@ -61,7 +63,7 @@ public sealed class GearnixApiFactory(
     {
         // HTTPS, so the Secure auth cookie is stored and sent back like in a browser.
         var client = CreateClient(new WebApplicationFactoryClientOptions { BaseAddress = new Uri("https://localhost") });
-        client.DefaultRequestHeaders.Add("X-CSRF", "1");
+        client.DefaultRequestHeaders.Add(CsrfHeaderMiddleware.HeaderName, CsrfHeaderMiddleware.HeaderValue);
         return client;
     }
 

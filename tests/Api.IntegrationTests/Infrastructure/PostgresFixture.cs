@@ -29,6 +29,8 @@ public sealed class PostgresFixture : IAsyncLifetime
         await dbContext.Database.MigrateAsync();
 
         // The same seeder the seed command runs; in the Test environment it creates the roles only.
+        // Note: tests share this database, and SeedTests also adds staff@demo.local and admin@demo.local,
+        // so never assert on total user or role-member counts.
         await using var factory = new GearnixApiFactory(ConnectionString);
         await using var scope = factory.Services.CreateAsyncScope();
         await scope.ServiceProvider.GetRequiredService<IdentitySeeder>().SeedAsync(CancellationToken.None);

@@ -715,7 +715,7 @@ tồn tại, sai mật khẩu và tài khoản bị khóa trả lời giống h�
 | Webhook không bao giờ tới | Đơn hết hạn và hàng được trả lại; webhook tới muộn dẫn tới `RefundRequired` |
 | Job hết hạn bị lỗi hoặc server khởi động lại | Mọi trạng thái nằm trong database; lần chạy sau tiếp tục |
 | Tắt ứng dụng khi job đang chạy | Tôn trọng `CancellationToken`; mỗi đơn một transaction |
-| Database không truy cập được | `/api/health/ready` báo lỗi; API trả `503` dạng ProblemDetails; ứng dụng vẫn khởi động được (không làm việc với database lúc khởi động) |
+| Database không truy cập được | `/api/health/ready` báo lỗi; API trả `503` dạng ProblemDetails; ứng dụng vẫn khởi động được (không làm việc với database lúc khởi động, trừ việc Data Protection thử nạp khóa và chỉ ghi log lỗi, ADR 0004) |
 | Deadlock hoặc lỗi serialization (`40P01`, `40001`) | Chạy lại toàn bộ transaction tối đa 3 lần, chờ một khoảng ngắn ngẫu nhiên (đặt hàng, xuất kho, hết hạn) |
 | Đầy ổ cứng | Ngăn bằng xoay vòng log và giới hạn thời gian giữ backup (§11.6) |
 | Deploy lỗi | Deploy lại image tag của phiên bản trước (§11.6) |
@@ -1073,7 +1073,7 @@ Các ADR cần viết (chậm nhất là khi xong task liên quan):
 | 2026-11-26 | Thu hẹp điều kiện chạy CI: pull request vào `main` và push lên `main` (§4, §11.6); W1-03 gỡ tùy chọn tạm cho phép "không có test nào chạy" trong CI (§14) | Chủ dự án |
 | 2026-11-26 | Duyệt Microsoft.AspNetCore.Mvc.Testing cho integration test (§4); ghi rõ đường dẫn đầy đủ `/api/health/...` của các endpoint health (§9, §11.3, §11.4, §11.6) | Chủ dự án |
 | 2026-11-26 | Mã lỗi chung (gồm các mã dự phòng `conflict`, `bad_request`, `service_unavailable`), câu báo lỗi tiếng Anh do frontend dịch, enum dạng chuỗi, đường dẫn tài liệu API (§9) | Chủ dự án |
-| 2026-11-26 | Identity: mã lỗi `email_taken`, `invalid_credentials`, `csrf_header_missing` (§9); bắt đăng nhập mặc định cho mọi controller thay vì fallback policy, để route không tồn tại vẫn trả `404` (#14) | Chủ dự án |
+| 2026-11-26 | Identity: mã lỗi `email_taken`, `invalid_credentials`, `csrf_header_missing` (§9); bắt đăng nhập mặc định cho mọi controller thay vì fallback policy, để route không tồn tại vẫn trả `404`; Data Protection nạp khóa từ database lúc khởi động (§11.3) (#14) | Chủ dự án |
 
 ---
 

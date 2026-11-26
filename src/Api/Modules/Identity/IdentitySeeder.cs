@@ -1,4 +1,5 @@
 using Gearnix.Api.Common.Auth;
+using Gearnix.Api.Common.Hosting;
 using Gearnix.Api.Data;
 using Gearnix.Api.Modules.Identity.Entities;
 
@@ -23,7 +24,7 @@ public sealed class IdentitySeeder(
 
     public async Task SeedAsync(CancellationToken cancellationToken)
     {
-        var seedDemoAccounts = environment.IsDevelopment() || environment.IsEnvironment("Demo");
+        var seedDemoAccounts = environment.HasDemoData();
 
         // Check configuration before writing anything, so a misconfigured deploy fails clearly and early.
         var staffPassword = seedDemoAccounts ? RequiredPassword(options.Value.StaffPassword, "StaffPassword") : null;
@@ -48,9 +49,17 @@ public sealed class IdentitySeeder(
     private async Task EnsureAccountAsync(
         string email, string fullName, string role, string password, CancellationToken cancellationToken)
     {
-        if (await userManager.FindByEmailAsync(email) is not null)
+        var existing = await userManager.FindByEmailAsync(email);
+        if (existing is not null)
         {
-            return; // already seeded: keep it as it is, including its password
+            // Already seeded: keep it as it is, including its password. If someone registered this email before
+            // the seed ran, it is a Customer; fail loudly instead of leaving the demo without its staff account.
+            if (!await userManager.IsInRoleAsync(existing, role))
+            {
+                throw new InvalidOperationException($"The demo account {email} exists without the {role} role.");
+            }
+
+            return;
         }
 
         var user = new AppUser { UserName = email, Email = email, FullName = fullName };
@@ -73,7 +82,8 @@ public sealed class IdentitySeeder(
         if (!result.Succeeded)
         {
             throw new InvalidOperationException(
-                "Seeding failed: " + string.Join("; ", result.Errors.Select(error => error.Description)));
+                // Codes only: descriptions can contain the email (personal data in logs, Rule.md §6).
+                "Seeding failed: " + string.Join("; ", result.Errors.Select(error => error.Code)));
         }
     }
 }

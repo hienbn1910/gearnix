@@ -30,6 +30,19 @@ public sealed class AuthEndpointsTests(PostgresFixture postgres)
     }
 
     [Fact]
+    public async Task Register_EmailWithApostrophe_Returns201()
+    {
+        await using var factory = new GearnixApiFactory(postgres.ConnectionString);
+        using var client = factory.CreateApiClient();
+        var email = $"o'neil-{Guid.CreateVersion7():N}@test.local"; // valid email, outside Identity's default user-name characters
+
+        var response = await client.PostAsJsonAsync("/api/auth/register",
+            new { email, password = Password, fullName = "Hoàng Em" }, TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+    }
+
+    [Fact]
     public async Task Register_ExistingEmailInOtherCase_Returns409EmailTaken()
     {
         await using var factory = new GearnixApiFactory(postgres.ConnectionString);
