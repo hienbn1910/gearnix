@@ -920,9 +920,9 @@ Mọi task đi theo quy trình đầy đủ ở `Rule.md` §1.
 - [x] **W1-03** (#10) Nền tảng dữ liệu: `AppDbContext`, đặt tên snake_case, quy ước UTC và decimal, `TimeProvider`,
   cấu hình connection pool, kiểm tra options khi khởi động, migration đầu tiên, `/api/health/live` và `/api/health/ready`.
   Đồng thời gỡ tùy chọn CI `--ignore-exit-code 8` khi đã có test đầu tiên (từ W1-02, #8).
-- [ ] **W1-04** (#12) Xử lý lỗi và tài liệu API: ProblemDetails có `code` và `traceId`, nối FluentValidation,
+- [x] **W1-04** (#12) Xử lý lỗi và tài liệu API: ProblemDetails có `code` và `traceId`, nối FluentValidation,
   kiểu phản hồi danh sách chuẩn (§9), OpenAPI + Scalar.
-- [ ] **W1-05** Identity: đăng ký, đăng nhập, đăng xuất, me; cấu hình cookie (§11.5); `401`/`403` thay vì chuyển hướng;
+- [ ] **W1-05** (#14) Identity: đăng ký, đăng nhập, đăng xuất, me; cấu hình cookie (§11.5); `401`/`403` thay vì chuyển hướng;
   kiểm tra header CSRF; khóa tài khoản; khóa Data Protection trong database; lệnh `seed` cùng các vai trò và tài khoản
   WarehouseStaff/Admin (§13.4); policy phân quyền; cơ chế xác thực dành cho integration test.
   *Xong khi:* có test chứng minh các trường hợp `401`, `403`, thiếu CSRF và khóa tài khoản.
