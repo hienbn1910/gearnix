@@ -86,7 +86,7 @@ e-invoices, email sending, Kubernetes.
 | EF Core tooling | Microsoft.EntityFrameworkCore.Design + `dotnet-ef` tool | Migrations and the migration bundle |
 | Database naming | EFCore.NamingConventions | snake_case names (§6); community package — confirm EF Core 10 support when installing |
 | Database | PostgreSQL 17+ | `pg_trgm` extension for search |
-| Validation | FluentValidation | Backend validation is mandatory |
+| Validation | FluentValidation (+ FluentValidation.DependencyInjectionExtensions) | Backend validation is mandatory |
 | Authentication | ASP.NET Core Identity, cookie authentication | HttpOnly, Secure, SameSite cookies; no JWT in browser storage |
 | Identity & key storage | Microsoft.AspNetCore.Identity.EntityFrameworkCore, Microsoft.AspNetCore.DataProtection.EntityFrameworkCore | Users/roles and Data Protection keys stored in PostgreSQL (§6.5) |
 | Errors | ProblemDetails | One error shape for every endpoint |
@@ -617,6 +617,11 @@ All routes are prefixed with `/api`. Every list endpoint is paginated (`Rule.md`
 | `429` | Rate limited |
 
 Every error is a ProblemDetails response with a stable `code` and the request's `traceId`.
+`title` and messages are English; the frontend shows Vietnamese text based on `code`.
+Generic error codes: `validation_failed` (400, with an `errors` map of camelCase field names), `unauthorized` (401),
+`forbidden` (403), `not_found` (404), `method_not_allowed` (405), `conflict` (409, fallback when no business code applies),
+`rate_limited` (429), `internal_error` (500 and any other 5xx, never exposes exception details), `database_unavailable`
+(503, temporary database failure), `service_unavailable` (any other 503), `bad_request` (any other 4xx, e.g. 415).
 Business error codes: `out_of_stock`, `invalid_status`, `too_many_pending_orders`, `idempotency_key_reused`,
 `adjustment_below_reserved` (§7.10).
 
@@ -624,6 +629,8 @@ Business error codes: `out_of_stock`, `invalid_status`, `too_many_pending_orders
 
 - Page-based lists: `{ items, page, pageSize, totalCount }` (default `pageSize` 20, maximum 100).
 - Keyset lists: `{ items, nextCursor }` (`nextCursor` is `null` on the last page).
+- Enums are serialized as strings (e.g. `"PendingPayment"`).
+- API documentation: OpenAPI document at `/api/openapi/v1.json` and a Scalar page at `/api/docs`, in `Development` and `Demo` only.
 - No API versioning: there is a single client that we control. A breaking change updates the generated frontend types in the same pull request.
 
 ---
@@ -910,10 +917,10 @@ Every task follows the full process in `Rule.md` §1.
 - [x] **W1-02** (#8) CI with GitHub Actions: backend build and tests, .NET vulnerability check; Dependabot.
   Frontend jobs are added in W1-09, once the apps exist.
   *Done when:* a pull request shows green checks.
-- [ ] **W1-03** (#10) Data foundation: `AppDbContext`, snake_case naming, UTC and decimal conventions, `TimeProvider`,
+- [x] **W1-03** (#10) Data foundation: `AppDbContext`, snake_case naming, UTC and decimal conventions, `TimeProvider`,
   connection pool settings, options validation at startup, first migration, `/api/health/live` and `/api/health/ready`.
   Also remove the CI allowance `--ignore-exit-code 8` once the first test exists (from W1-02, #8).
-- [ ] **W1-04** Error handling and API docs: ProblemDetails with `code` and `traceId`, FluentValidation wiring,
+- [ ] **W1-04** (#12) Error handling and API docs: ProblemDetails with `code` and `traceId`, FluentValidation wiring,
   standard list response types (§9), OpenAPI + Scalar.
 - [ ] **W1-05** Identity: register, login, logout, me; cookie settings (§11.5); `401`/`403` instead of redirects;
   CSRF header check; lockout; Data Protection keys in the database; the `seed` command with roles and the
@@ -1063,6 +1070,7 @@ ADRs to write (no later than when the related task is done):
 | 2026-11-23 | Open questions resolved: only WarehouseStaff ship/complete (§3); approved packages added to §4; `CancelReason` replaced by `ExpiredAt` (§6.3); webhook carries `paymentId` (§7.9); error code `adjustment_below_reserved` (§9); L1 load set in requests/s (§11.2); hosting decided at W5-03 (§11.6); `seed` command and per-task seeding (§13.4, §11.6); frontend CI jobs move to W1-09 (§14) | Project owner |
 | 2026-11-26 | CI triggers narrowed to pull requests into `main` and pushes to `main` (§4, §11.6); W1-03 removes the temporary CI allowance for "zero tests ran" (§14) | Project owner |
 | 2026-11-26 | Microsoft.AspNetCore.Mvc.Testing approved for integration tests (§4); health endpoints documented with their full `/api/health/...` paths (§9, §11.3, §11.4, §11.6) | Project owner |
+| 2026-11-26 | Generic error codes (incl. fallbacks `conflict`, `bad_request`, `service_unavailable`), English error text translated by the frontend, enums as strings, API documentation paths (§9) | Project owner |
 
 ---
 

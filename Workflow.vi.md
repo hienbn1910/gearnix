@@ -85,7 +85,7 @@ kiểm tra tương thích build PC, thu cũ đổi mới, trả góp, hóa đơn
 | Công cụ EF Core | Microsoft.EntityFrameworkCore.Design + công cụ `dotnet-ef` | Migration và migration bundle |
 | Đặt tên trong database | EFCore.NamingConventions | Tên snake_case (§6); package cộng đồng — kiểm tra đã hỗ trợ EF Core 10 khi cài |
 | Database | PostgreSQL 17 trở lên | Extension `pg_trgm` cho tìm kiếm |
-| Kiểm tra đầu vào | FluentValidation | Bắt buộc kiểm tra ở backend |
+| Kiểm tra đầu vào | FluentValidation (+ FluentValidation.DependencyInjectionExtensions) | Bắt buộc kiểm tra ở backend |
 | Xác thực | ASP.NET Core Identity, xác thực bằng cookie | Cookie HttpOnly, Secure, SameSite; không lưu JWT trên trình duyệt |
 | Lưu Identity và khóa | Microsoft.AspNetCore.Identity.EntityFrameworkCore, Microsoft.AspNetCore.DataProtection.EntityFrameworkCore | User/role và khóa Data Protection lưu trong PostgreSQL (§6.5) |
 | Lỗi | ProblemDetails | Một định dạng lỗi chung cho mọi endpoint |
@@ -616,6 +616,11 @@ Mọi route có tiền tố `/api`. Mọi endpoint trả danh sách đều phân
 | `429` | Bị giới hạn tần suất |
 
 Mọi lỗi là phản hồi ProblemDetails có `code` cố định và `traceId` của request.
+`title` và câu báo lỗi bằng tiếng Anh; frontend hiển thị câu tiếng Việt dựa trên `code`.
+Các mã lỗi chung: `validation_failed` (400, kèm `errors` theo tên field dạng camelCase), `unauthorized` (401),
+`forbidden` (403), `not_found` (404), `method_not_allowed` (405), `conflict` (409, dùng khi không có mã nghiệp vụ nào),
+`rate_limited` (429), `internal_error` (500 và mọi 5xx khác, không bao giờ lộ chi tiết exception), `database_unavailable`
+(503, lỗi database tạm thời), `service_unavailable` (503 khác), `bad_request` (mọi 4xx khác, ví dụ 415).
 Các mã lỗi nghiệp vụ: `out_of_stock`, `invalid_status`, `too_many_pending_orders`, `idempotency_key_reused`,
 `adjustment_below_reserved` (§7.10).
 
@@ -623,6 +628,8 @@ Các mã lỗi nghiệp vụ: `out_of_stock`, `invalid_status`, `too_many_pendin
 
 - Danh sách phân trang theo trang: `{ items, page, pageSize, totalCount }` (`pageSize` mặc định 20, tối đa 100).
 - Danh sách phân trang keyset: `{ items, nextCursor }` (`nextCursor` là `null` ở trang cuối).
+- Enum được trả về dạng chuỗi (ví dụ `"PendingPayment"`).
+- Tài liệu API: tài liệu OpenAPI ở `/api/openapi/v1.json` và trang Scalar ở `/api/docs`, chỉ bật ở `Development` và `Demo`.
 - Không đánh version API vì chỉ có một client do mình kiểm soát. Thay đổi phá vỡ tương thích phải cập nhật kiểu dữ liệu
   sinh ra cho frontend trong cùng pull request.
 
@@ -910,10 +917,10 @@ Mọi task đi theo quy trình đầy đủ ở `Rule.md` §1.
 - [x] **W1-02** (#8) CI bằng GitHub Actions: build và test backend, kiểm tra lỗ hổng thư viện .NET; Dependabot.
   Job cho frontend được thêm ở W1-09, khi các app đã tồn tại.
   *Xong khi:* một pull request hiện dấu tích xanh.
-- [ ] **W1-03** (#10) Nền tảng dữ liệu: `AppDbContext`, đặt tên snake_case, quy ước UTC và decimal, `TimeProvider`,
+- [x] **W1-03** (#10) Nền tảng dữ liệu: `AppDbContext`, đặt tên snake_case, quy ước UTC và decimal, `TimeProvider`,
   cấu hình connection pool, kiểm tra options khi khởi động, migration đầu tiên, `/api/health/live` và `/api/health/ready`.
   Đồng thời gỡ tùy chọn CI `--ignore-exit-code 8` khi đã có test đầu tiên (từ W1-02, #8).
-- [ ] **W1-04** Xử lý lỗi và tài liệu API: ProblemDetails có `code` và `traceId`, nối FluentValidation,
+- [ ] **W1-04** (#12) Xử lý lỗi và tài liệu API: ProblemDetails có `code` và `traceId`, nối FluentValidation,
   kiểu phản hồi danh sách chuẩn (§9), OpenAPI + Scalar.
 - [ ] **W1-05** Identity: đăng ký, đăng nhập, đăng xuất, me; cấu hình cookie (§11.5); `401`/`403` thay vì chuyển hướng;
   kiểm tra header CSRF; khóa tài khoản; khóa Data Protection trong database; lệnh `seed` cùng các vai trò và tài khoản
@@ -1064,6 +1071,7 @@ Các ADR cần viết (chậm nhất là khi xong task liên quan):
 | 2026-11-23 | Chốt các câu hỏi còn mở: chỉ WarehouseStaff xuất kho/hoàn tất đơn (§3); thêm các package đã duyệt vào §4; thay `CancelReason` bằng `ExpiredAt` (§6.3); webhook mang `paymentId` (§7.9); mã lỗi `adjustment_below_reserved` (§9); tải L1 đặt theo request/giây (§11.2); hosting quyết ở W5-03 (§11.6); lệnh `seed` và seed theo từng task (§13.4, §11.6); job CI frontend chuyển sang W1-09 (§14) | Chủ dự án |
 | 2026-11-26 | Thu hẹp điều kiện chạy CI: pull request vào `main` và push lên `main` (§4, §11.6); W1-03 gỡ tùy chọn tạm cho phép "không có test nào chạy" trong CI (§14) | Chủ dự án |
 | 2026-11-26 | Duyệt Microsoft.AspNetCore.Mvc.Testing cho integration test (§4); ghi rõ đường dẫn đầy đủ `/api/health/...` của các endpoint health (§9, §11.3, §11.4, §11.6) | Chủ dự án |
+| 2026-11-26 | Mã lỗi chung (gồm các mã dự phòng `conflict`, `bad_request`, `service_unavailable`), câu báo lỗi tiếng Anh do frontend dịch, enum dạng chuỗi, đường dẫn tài liệu API (§9) | Chủ dự án |
 
 ---
 
