@@ -230,7 +230,7 @@ These are the reason the project exists. Breaking any of them is a critical bug.
 | ✅ Build | `dotnet build` |
 | ✅ Test (all) | `dotnet test` (Microsoft.Testing.Platform runner, set in `global.json`) |
 | ✅ Format | `dotnet format`; CI-style check: `dotnet format --verify-no-changes` |
-| ✅ Restore repo tools | `dotnet tool restore` (installs `dotnet-ef` 10.x from `dotnet-tools.json`) |
+| ✅ Restore repo tools | `dotnet tool restore` (installs `dotnet-ef` 10.x from `.config/dotnet-tools.json`) |
 | ✅ Local connection string | `dotnet user-secrets set "Database:ConnectionString" "Host=127.0.0.1;Port=<POSTGRES_PORT>;Database=gearnix;Username=gearnix;Password=<POSTGRES_PASSWORD>" --project src/Api` |
 | ✅ Add migration | `dotnet ef migrations add <Name> --project src/Api --output-dir Data/Migrations` |
 | ✅ Apply migrations (local only) | `dotnet ef database update --project src/Api` |

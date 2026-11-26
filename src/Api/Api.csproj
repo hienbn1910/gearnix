@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <!-- Target framework, nullable, implicit usings and warnings-as-errors come from Directory.Build.props. -->
   <PropertyGroup>

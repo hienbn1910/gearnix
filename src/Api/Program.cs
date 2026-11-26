@@ -28,9 +28,11 @@ var app = builder.Build();
 app.MapControllers();
 
 // Liveness: the process is running. Runs no checks, so it never touches the database.
-app.MapHealthChecks("/api/health/live", new() { Predicate = _ => false });
+app.MapHealthChecks("/api/health/live", new() { Predicate = _ => false })
+    .AllowAnonymous();
 
 // Readiness: the database is reachable. Unhealthy → 503.
-app.MapHealthChecks("/api/health/ready", new() { Predicate = check => check.Tags.Contains("ready") });
+app.MapHealthChecks("/api/health/ready", new() { Predicate = check => check.Tags.Contains("ready") })
+    .AllowAnonymous();
 
 app.Run();

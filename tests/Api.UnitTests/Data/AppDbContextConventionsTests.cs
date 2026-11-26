@@ -12,8 +12,8 @@ public sealed class AppDbContextConventionsTests
         var entity = BuildSampleEntityModel();
 
         Assert.Equal("sample_order", entity.GetTableName());
-        Assert.Equal("unit_price", entity.FindProperty(nameof(SampleOrder.UnitPrice))!.GetColumnName());
-        Assert.Equal("created_at", entity.FindProperty(nameof(SampleOrder.CreatedAt))!.GetColumnName());
+        Assert.Equal("unit_price", Property(entity, nameof(SampleOrder.UnitPrice)).GetColumnName());
+        Assert.Equal("created_at", Property(entity, nameof(SampleOrder.CreatedAt)).GetColumnName());
     }
 
     [Fact]
@@ -21,7 +21,7 @@ public sealed class AppDbContextConventionsTests
     {
         var entity = BuildSampleEntityModel();
 
-        Assert.Equal("numeric(18,2)", entity.FindProperty(nameof(SampleOrder.UnitPrice))!.GetColumnType());
+        Assert.Equal("numeric(18,2)", Property(entity, nameof(SampleOrder.UnitPrice)).GetColumnType());
     }
 
     [Fact]
@@ -29,7 +29,7 @@ public sealed class AppDbContextConventionsTests
     {
         var entity = BuildSampleEntityModel();
 
-        Assert.Equal("timestamp with time zone", entity.FindProperty(nameof(SampleOrder.CreatedAt))!.GetColumnType());
+        Assert.Equal("timestamp with time zone", Property(entity, nameof(SampleOrder.CreatedAt)).GetColumnType());
     }
 
     private static Microsoft.EntityFrameworkCore.Metadata.IEntityType BuildSampleEntityModel()
@@ -39,7 +39,17 @@ public sealed class AppDbContextConventionsTests
             .UseNpgsql("Host=unused")
             .Options;
         using var context = new SampleDbContext(options);
-        return context.Model.FindEntityType(typeof(SampleOrder))!;
+        var entity = context.Model.FindEntityType(typeof(SampleOrder));
+        Assert.NotNull(entity);
+        return entity;
+    }
+
+    private static Microsoft.EntityFrameworkCore.Metadata.IProperty Property(
+        Microsoft.EntityFrameworkCore.Metadata.IEntityType entity, string name)
+    {
+        var property = entity.FindProperty(name);
+        Assert.NotNull(property);
+        return property;
     }
 
     private sealed class SampleOrder

@@ -15,9 +15,7 @@ public sealed class GearnixApiFactory(string? connectionString) : WebApplication
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Test");
-        if (connectionString is not null)
-        {
-            builder.UseSetting("Database:ConnectionString", connectionString);
-        }
+        // Always set the value, so a Database__ConnectionString environment variable can never leak into a test.
+        builder.UseSetting("Database:ConnectionString", connectionString ?? "");
     }
 }
