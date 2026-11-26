@@ -35,4 +35,8 @@ public sealed class TestErrorsController : ControllerBase
     // The way a real controller handles a service result.
     private IActionResult FromResult(Result<string> result) =>
         result.IsSuccess ? Ok(result.Value) : this.ToProblem(result.Error);
+
+    // Echoes the body back, so tests can see validation and enum serialization.
+    [HttpPost("validated")]
+    public IActionResult Validated(TestValidatedRequest request) => Ok(request);
 }

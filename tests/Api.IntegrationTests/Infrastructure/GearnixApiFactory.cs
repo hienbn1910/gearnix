@@ -1,3 +1,5 @@
+using FluentValidation;
+
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -20,8 +22,11 @@ public sealed class GearnixApiFactory(string? connectionString) : WebApplication
         // Always set the value, so a Database__ConnectionString environment variable can never leak into a test.
         builder.UseSetting("Database:ConnectionString", connectionString ?? "");
 
-        // Adds the test-only controllers of this assembly (e.g. TestErrorsController).
+        // Adds the test-only controllers and validators of this assembly (e.g. TestErrorsController).
         builder.ConfigureTestServices(services =>
-            services.AddControllers().AddApplicationPart(typeof(GearnixApiFactory).Assembly));
+        {
+            services.AddControllers().AddApplicationPart(typeof(GearnixApiFactory).Assembly);
+            services.AddValidatorsFromAssemblyContaining<GearnixApiFactory>();
+        });
     }
 }

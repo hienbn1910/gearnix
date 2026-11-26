@@ -1,4 +1,9 @@
+using System.Text.Json.Serialization;
+
+using FluentValidation;
+
 using Gearnix.Api.Common.Errors;
+using Gearnix.Api.Common.Validation;
 using Gearnix.Api.Data;
 
 using Microsoft.EntityFrameworkCore;
@@ -6,7 +11,10 @@ using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
+builder.Services.AddControllers(options => options.Filters.Add<FluentValidationFilter>())
+    // Enums travel as strings ("PendingPayment"), never as numbers.
+    .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 builder.Services.AddGearnixProblemDetails();
 builder.Services.AddExceptionHandler<UnhandledExceptionHandler>();
 
