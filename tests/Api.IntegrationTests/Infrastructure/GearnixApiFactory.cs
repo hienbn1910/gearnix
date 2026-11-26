@@ -1,6 +1,9 @@
 using FluentValidation;
 
+using Microsoft.AspNetCore.Authentication;
+
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,6 +17,8 @@ namespace Gearnix.Api.IntegrationTests.Infrastructure;
 public sealed class GearnixApiFactory(string? connectionString, string environment = "Test")
     : WebApplicationFactory<Program>
 {
+    private const string TestOrCookieScheme = "TestOrCookie";
+
     /// <summary>A port on the local machine where no PostgreSQL listens.</summary>
     public const string UnreachableConnectionString =
         "Host=127.0.0.1;Port=1;Username=nobody;Password=nothing;Database=none";
@@ -29,6 +34,15 @@ public sealed class GearnixApiFactory(string? connectionString, string environme
         {
             services.AddControllers().AddApplicationPart(typeof(GearnixApiFactory).Assembly);
             services.AddValidatorsFromAssemblyContaining<GearnixApiFactory>();
+
+            // Requests with X-Test-User use the test scheme; all others use the real Identity cookie.
+            services.AddAuthentication()
+                .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(TestAuthHandler.SchemeName, null)
+                .AddPolicyScheme(TestOrCookieScheme, null, scheme => scheme.ForwardDefaultSelector = context =>
+                    context.Request.Headers.ContainsKey(TestAuthHandler.HeaderName)
+                        ? TestAuthHandler.SchemeName
+                        : IdentityConstants.ApplicationScheme);
+            services.PostConfigure<AuthenticationOptions>(options => options.DefaultScheme = TestOrCookieScheme);
         });
     }
 
@@ -40,6 +54,14 @@ public sealed class GearnixApiFactory(string? connectionString, string environme
     {
         var client = CreateClient();
         client.DefaultRequestHeaders.Add("X-CSRF", "1");
+        return client;
+    }
+
+    /// <summary>A frontend-like client acting as the given user and role through the test authentication scheme.</summary>
+    public HttpClient CreateApiClientAs(Guid userId, string role)
+    {
+        var client = CreateApiClient();
+        client.DefaultRequestHeaders.Add(TestAuthHandler.HeaderName, $"{userId};{role}");
         return client;
     }
 }

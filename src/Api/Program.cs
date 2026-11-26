@@ -2,10 +2,12 @@ using System.Text.Json.Serialization;
 
 using FluentValidation;
 
+using Gearnix.Api.Common.Auth;
 using Gearnix.Api.Common.Errors;
 using Gearnix.Api.Common.Security;
 using Gearnix.Api.Common.Validation;
 using Gearnix.Api.Data;
+using Gearnix.Api.Modules.Identity;
 
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -51,6 +53,9 @@ builder.Services.AddDbContext<AppDbContext>((services, options) =>
     options.UseNpgsql(database.BuildConnectionString());
 });
 
+builder.Services.AddIdentityModule();
+builder.Services.AddGearnixAuthorization();
+
 builder.Services.AddHealthChecks()
     .AddCheck<DatabaseHealthCheck>("database", tags: ["ready"], timeout: TimeSpan.FromSeconds(3));
 
@@ -64,7 +69,11 @@ app.UseStatusCodePages();
 // State-changing requests must carry X-CSRF: 1 (Workflow.md §11.5).
 app.UseMiddleware<CsrfHeaderMiddleware>();
 
-app.MapControllers();
+app.UseAuthentication();
+app.UseAuthorization();
+
+// Secure by default: every controller action requires a signed-in user unless it has [AllowAnonymous].
+app.MapControllers().RequireAuthorization();
 
 // API documentation, under /api so the reverse proxy exposes it; not in Test or LoadTest.
 if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Demo"))
