@@ -100,7 +100,7 @@ kiểm tra tương thích build PC, thu cũ đổi mới, trả góp, hóa đơn
 | Dữ liệu mẫu | Bogus | Được project API tham chiếu; bộ seed chỉ chạy ở `Development`, `Demo` và `LoadTest` (§13.4) |
 | Load test | k6 | |
 | Môi trường cục bộ | Docker Compose | |
-| CI | GitHub Actions | Build, test và lint mỗi lần push và pull request |
+| CI | GitHub Actions | Build, test và lint mỗi pull request vào `main` và mỗi lần push lên `main` |
 | Hosting | VPS + Docker Compose + Caddy (HTTPS) | Chọn nhà cung cấp ở W5-03 (§11.6) |
 | AI (điểm cộng) | Microsoft.Extensions.AI | Ollama khi chạy máy; mô hình hosted khi demo |
 | Theo dõi task | GitHub Issues + milestone, `gh` CLI | Spec nằm trong issue (§17) |
@@ -757,7 +757,7 @@ Các mã lỗi nghiệp vụ: `out_of_stock`, `invalid_status`, `too_many_pendin
 | `Demo` | Bản deploy công khai | Bật cổng giả lập, dữ liệu demo, hạn thanh toán 1 phút |
 
 - **Cấu hình** dùng các lớp options được kiểm tra khi khởi động (`ValidateOnStart`), thiếu cấu hình là báo lỗi ngay.
-- **CI** (mỗi lần push và pull request): build, test, lint, kiểm tra lỗ hổng thư viện.
+- **CI** (mỗi pull request vào `main` và mỗi lần push lên `main`; push lên branch tính năng đã được kiểm tra qua pull request của nó): build, test, lint, kiểm tra lỗ hổng thư viện.
 - **Image:** mỗi lần merge vào `main`, Docker image được build, gắn tag bằng SHA của commit git và đẩy lên GitHub Container Registry.
 - **Deploy** (kích hoạt thủ công bằng `workflow_dispatch`, qua SSH): backup database → `docker compose pull` → chạy
   **migration bundle** của EF Core → chạy lệnh `seed` (idempotent, §13.4) → `docker compose up -d` → chờ `/health/ready`.
@@ -900,18 +900,19 @@ Mọi task đi theo quy trình đầy đủ ở `Rule.md` §1.
 - Mỗi issue thuộc milestone GitHub của tuần tương ứng (`Week 1` … `Week 5`, `Bonus`).
 - Task xong khi pull request (`Closes #14`) được merge. Lúc đó đánh dấu ở đây và trong `Workflow.md`.
 
-**Giai đoạn hiện tại:** Tuần 1 — chưa bắt đầu
+**Giai đoạn hiện tại:** Tuần 1 — đang thực hiện
 
 ### Tuần 1 — Nền tảng và Catalog
 
-- [ ] **W1-01** (#6) Dựng repository: solution, thư mục theo `Rule.md` §2, `.editorconfig`, `Directory.Build.props`
+- [x] **W1-01** (#6) Dựng repository: solution, thư mục theo `Rule.md` §2, `.editorconfig`, `Directory.Build.props`
   (bật nullable, coi cảnh báo là lỗi), `docker-compose.yml` (PostgreSQL), `.gitignore`, khung README.
   *Xong khi:* chạy `docker compose up -d` rồi `dotnet run` thì API khởi động được.
-- [ ] **W1-02** CI bằng GitHub Actions: build và test backend, kiểm tra lỗ hổng thư viện .NET; Dependabot.
+- [ ] **W1-02** (#8) CI bằng GitHub Actions: build và test backend, kiểm tra lỗ hổng thư viện .NET; Dependabot.
   Job cho frontend được thêm ở W1-09, khi các app đã tồn tại.
   *Xong khi:* một pull request hiện dấu tích xanh.
 - [ ] **W1-03** Nền tảng dữ liệu: `AppDbContext`, đặt tên snake_case, quy ước UTC và decimal, `TimeProvider`,
   cấu hình connection pool, kiểm tra options khi khởi động, migration đầu tiên, `/health/live` và `/health/ready`.
+  Đồng thời gỡ tùy chọn CI `--ignore-exit-code 8` khi đã có test đầu tiên (từ W1-02, #8).
 - [ ] **W1-04** Xử lý lỗi và tài liệu API: ProblemDetails có `code` và `traceId`, nối FluentValidation,
   kiểu phản hồi danh sách chuẩn (§9), OpenAPI + Scalar.
 - [ ] **W1-05** Identity: đăng ký, đăng nhập, đăng xuất, me; cấu hình cookie (§11.5); `401`/`403` thay vì chuyển hướng;
@@ -1061,6 +1062,7 @@ Các ADR cần viết (chậm nhất là khi xong task liên quan):
 | 2026-11-21 | Đổi tên sản phẩm thành Gearnix (repository `gearnix`); tiền tố mã đơn `GN-` (trước đây ghi nhầm 2026-11-22 do lệch múi giờ) | Chủ dự án |
 | 2026-11-21 | Viết lại văn phong `Workflow.md` và `Workflow.vi.md`: chỉ sửa câu chữ, cấu trúc và bảng; không đổi phạm vi hay quy tắc; câu hỏi còn mở được đánh dấu **[Cần xác nhận]** và gom ở §20 | Chủ dự án |
 | 2026-11-23 | Chốt các câu hỏi còn mở: chỉ WarehouseStaff xuất kho/hoàn tất đơn (§3); thêm các package đã duyệt vào §4; thay `CancelReason` bằng `ExpiredAt` (§6.3); webhook mang `paymentId` (§7.9); mã lỗi `adjustment_below_reserved` (§9); tải L1 đặt theo request/giây (§11.2); hosting quyết ở W5-03 (§11.6); lệnh `seed` và seed theo từng task (§13.4, §11.6); job CI frontend chuyển sang W1-09 (§14) | Chủ dự án |
+| 2026-11-26 | Thu hẹp điều kiện chạy CI: pull request vào `main` và push lên `main` (§4, §11.6); W1-03 gỡ tùy chọn tạm cho phép "không có test nào chạy" trong CI (§14) | Chủ dự án |
 
 ---
 

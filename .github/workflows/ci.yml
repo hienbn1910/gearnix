@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install .NET (version from global.json)
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build (Release)
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Check formatting
+        run: dotnet format --verify-no-changes --no-restore
+
+      # TODO(W1-03): remove "--ignore-exit-code 8" when the first test is added.
+      # Exit code 8 means "zero tests ran"; the test projects are still empty.
+      - name: Test
+        run: dotnet test --configuration Release --no-build --ignore-exit-code 8
+
+      # `dotnet list package --vulnerable` exits 0 even when it finds vulnerabilities,
+      # so the JSON report is inspected and the step fails if any are listed.
+      # It also exits 0 with an empty report when vulnerability data cannot be fetched;
+      # that case is caught earlier: restore's NuGet audit raises NU1900-NU1904, and
+      # TreatWarningsAsErrors (Directory.Build.props) turns them into restore errors.
+      - name: Check for vulnerable packages
+        run: |
+          report="$RUNNER_TEMP/vulnerable.json"
+          dotnet list package --vulnerable --include-transitive --format json > "$report"
+          if grep -q '"vulnerabilities"' "$report"; then
+            cat "$report"
+            echo "::error::Vulnerable NuGet packages found (see the report above)."
+            exit 1
+          fi
+          echo "No vulnerable packages found."
