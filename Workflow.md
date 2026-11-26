@@ -623,7 +623,8 @@ Generic error codes: `validation_failed` (400, with an `errors` map of camelCase
 `rate_limited` (429), `internal_error` (500 and any other 5xx, never exposes exception details), `database_unavailable`
 (503, temporary database failure), `service_unavailable` (any other 503), `bad_request` (any other 4xx, e.g. 415).
 Business error codes: `out_of_stock`, `invalid_status`, `too_many_pending_orders`, `idempotency_key_reused`,
-`adjustment_below_reserved` (§7.10).
+`adjustment_below_reserved` (§7.10), `email_taken` (409, register), `invalid_credentials` (401, login: unknown email,
+wrong password and locked account all look the same), `csrf_header_missing` (403, §11.5).
 
 **Response shapes**
 
@@ -714,7 +715,7 @@ These are **targets to verify, not measured results**. After the first k6 run, a
 | Webhook never arrives | The order expires and stock is released; a late webhook leads to `RefundRequired` |
 | Expiry job crashes or server restarts | All state is in the database; the next run continues |
 | Shutdown during a job run | `CancellationToken` is honored; one transaction per order |
-| Database unavailable | `/api/health/ready` reports unhealthy; the API returns `503` ProblemDetails; the app still starts (no database work at startup) |
+| Database unavailable | `/api/health/ready` reports unhealthy; the API returns `503` ProblemDetails; the app still starts (no database work at startup, except that Data Protection tries to load its keys and only logs an error, ADR 0004) |
 | Deadlock or serialization failure (`40P01`, `40001`) | Retry the whole transaction up to 3 times with a short random delay (checkout, shipment, expiry) |
 | Disk full | Prevented by log rotation and backup retention (§11.6) |
 | Bad deployment | Redeploy the previous image tag (§11.6) |
@@ -920,9 +921,9 @@ Every task follows the full process in `Rule.md` §1.
 - [x] **W1-03** (#10) Data foundation: `AppDbContext`, snake_case naming, UTC and decimal conventions, `TimeProvider`,
   connection pool settings, options validation at startup, first migration, `/api/health/live` and `/api/health/ready`.
   Also remove the CI allowance `--ignore-exit-code 8` once the first test exists (from W1-02, #8).
-- [ ] **W1-04** (#12) Error handling and API docs: ProblemDetails with `code` and `traceId`, FluentValidation wiring,
+- [x] **W1-04** (#12) Error handling and API docs: ProblemDetails with `code` and `traceId`, FluentValidation wiring,
   standard list response types (§9), OpenAPI + Scalar.
-- [ ] **W1-05** Identity: register, login, logout, me; cookie settings (§11.5); `401`/`403` instead of redirects;
+- [ ] **W1-05** (#14) Identity: register, login, logout, me; cookie settings (§11.5); `401`/`403` instead of redirects;
   CSRF header check; lockout; Data Protection keys in the database; the `seed` command with roles and the
   WarehouseStaff/Admin accounts (§13.4); authorization policies; test authentication scheme for integration tests.
   *Done when:* tests prove the `401`, `403`, missing-CSRF and lockout cases.
@@ -1071,6 +1072,7 @@ ADRs to write (no later than when the related task is done):
 | 2026-11-26 | CI triggers narrowed to pull requests into `main` and pushes to `main` (§4, §11.6); W1-03 removes the temporary CI allowance for "zero tests ran" (§14) | Project owner |
 | 2026-11-26 | Microsoft.AspNetCore.Mvc.Testing approved for integration tests (§4); health endpoints documented with their full `/api/health/...` paths (§9, §11.3, §11.4, §11.6) | Project owner |
 | 2026-11-26 | Generic error codes (incl. fallbacks `conflict`, `bad_request`, `service_unavailable`), English error text translated by the frontend, enums as strings, API documentation paths (§9) | Project owner |
+| 2026-11-26 | Identity: error codes `email_taken`, `invalid_credentials`, `csrf_header_missing` (§9); secure-by-default authorization on controllers instead of a fallback policy, so unknown routes stay `404`; Data Protection loads its keys from the database at startup (§11.3) (#14) | Project owner |
 
 ---
 

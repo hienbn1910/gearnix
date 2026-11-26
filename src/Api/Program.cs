@@ -2,9 +2,13 @@ using System.Text.Json.Serialization;
 
 using FluentValidation;
 
+using Gearnix.Api.Common.Auth;
 using Gearnix.Api.Common.Errors;
+using Gearnix.Api.Common.Security;
 using Gearnix.Api.Common.Validation;
 using Gearnix.Api.Data;
+using Gearnix.Api.Data.Seeding;
+using Gearnix.Api.Modules.Identity;
 
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -50,17 +54,34 @@ builder.Services.AddDbContext<AppDbContext>((services, options) =>
     options.UseNpgsql(database.BuildConnectionString());
 });
 
+builder.Services.AddIdentityModule();
+builder.Services.AddGearnixAuthorization();
+
 builder.Services.AddHealthChecks()
     .AddCheck<DatabaseHealthCheck>("database", tags: ["ready"], timeout: TimeSpan.FromSeconds(3));
 
 var app = builder.Build();
+
+// `dotnet run --project src/Api -- seed`: seed the database and exit, without starting the web server.
+if (SeedCommand.IsRequested(args))
+{
+    return await SeedCommand.RunAsync(app.Services, CancellationToken.None);
+}
 
 app.UseExceptionHandler();
 
 // Error responses without a body (unknown route, wrong method) become ProblemDetails.
 app.UseStatusCodePages();
 
-app.MapControllers();
+// State-changing requests must carry X-CSRF: 1 (Workflow.md §11.5).
+app.UseMiddleware<CsrfHeaderMiddleware>();
+
+app.UseAuthentication();
+app.UseAuthorization();
+
+// Secure by default: every controller action requires a signed-in user unless it has [AllowAnonymous].
+// This covers controllers only; any endpoint mapped with app.Map... must declare its own authorization.
+app.MapControllers().RequireAuthorization();
 
 // API documentation, under /api so the reverse proxy exposes it; not in Test or LoadTest.
 if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Demo"))
@@ -78,4 +99,5 @@ app.MapHealthChecks("/api/health/live", new() { Predicate = _ => false })
 app.MapHealthChecks("/api/health/ready", new() { Predicate = check => check.Tags.Contains("ready") })
     .AllowAnonymous();
 
-app.Run();
+await app.RunAsync();
+return 0;

@@ -622,7 +622,8 @@ Các mã lỗi chung: `validation_failed` (400, kèm `errors` theo tên field d�
 `rate_limited` (429), `internal_error` (500 và mọi 5xx khác, không bao giờ lộ chi tiết exception), `database_unavailable`
 (503, lỗi database tạm thời), `service_unavailable` (503 khác), `bad_request` (mọi 4xx khác, ví dụ 415).
 Các mã lỗi nghiệp vụ: `out_of_stock`, `invalid_status`, `too_many_pending_orders`, `idempotency_key_reused`,
-`adjustment_below_reserved` (§7.10).
+`adjustment_below_reserved` (§7.10), `email_taken` (409, đăng ký), `invalid_credentials` (401, đăng nhập: email không
+tồn tại, sai mật khẩu và tài khoản bị khóa trả lời giống hệt nhau), `csrf_header_missing` (403, §11.5).
 
 **Định dạng phản hồi**
 
@@ -714,7 +715,7 @@ Các mã lỗi nghiệp vụ: `out_of_stock`, `invalid_status`, `too_many_pendin
 | Webhook không bao giờ tới | Đơn hết hạn và hàng được trả lại; webhook tới muộn dẫn tới `RefundRequired` |
 | Job hết hạn bị lỗi hoặc server khởi động lại | Mọi trạng thái nằm trong database; lần chạy sau tiếp tục |
 | Tắt ứng dụng khi job đang chạy | Tôn trọng `CancellationToken`; mỗi đơn một transaction |
-| Database không truy cập được | `/api/health/ready` báo lỗi; API trả `503` dạng ProblemDetails; ứng dụng vẫn khởi động được (không làm việc với database lúc khởi động) |
+| Database không truy cập được | `/api/health/ready` báo lỗi; API trả `503` dạng ProblemDetails; ứng dụng vẫn khởi động được (không làm việc với database lúc khởi động, trừ việc Data Protection thử nạp khóa và chỉ ghi log lỗi, ADR 0004) |
 | Deadlock hoặc lỗi serialization (`40P01`, `40001`) | Chạy lại toàn bộ transaction tối đa 3 lần, chờ một khoảng ngắn ngẫu nhiên (đặt hàng, xuất kho, hết hạn) |
 | Đầy ổ cứng | Ngăn bằng xoay vòng log và giới hạn thời gian giữ backup (§11.6) |
 | Deploy lỗi | Deploy lại image tag của phiên bản trước (§11.6) |
@@ -920,9 +921,9 @@ Mọi task đi theo quy trình đầy đủ ở `Rule.md` §1.
 - [x] **W1-03** (#10) Nền tảng dữ liệu: `AppDbContext`, đặt tên snake_case, quy ước UTC và decimal, `TimeProvider`,
   cấu hình connection pool, kiểm tra options khi khởi động, migration đầu tiên, `/api/health/live` và `/api/health/ready`.
   Đồng thời gỡ tùy chọn CI `--ignore-exit-code 8` khi đã có test đầu tiên (từ W1-02, #8).
-- [ ] **W1-04** (#12) Xử lý lỗi và tài liệu API: ProblemDetails có `code` và `traceId`, nối FluentValidation,
+- [x] **W1-04** (#12) Xử lý lỗi và tài liệu API: ProblemDetails có `code` và `traceId`, nối FluentValidation,
   kiểu phản hồi danh sách chuẩn (§9), OpenAPI + Scalar.
-- [ ] **W1-05** Identity: đăng ký, đăng nhập, đăng xuất, me; cấu hình cookie (§11.5); `401`/`403` thay vì chuyển hướng;
+- [ ] **W1-05** (#14) Identity: đăng ký, đăng nhập, đăng xuất, me; cấu hình cookie (§11.5); `401`/`403` thay vì chuyển hướng;
   kiểm tra header CSRF; khóa tài khoản; khóa Data Protection trong database; lệnh `seed` cùng các vai trò và tài khoản
   WarehouseStaff/Admin (§13.4); policy phân quyền; cơ chế xác thực dành cho integration test.
   *Xong khi:* có test chứng minh các trường hợp `401`, `403`, thiếu CSRF và khóa tài khoản.
@@ -1072,6 +1073,7 @@ Các ADR cần viết (chậm nhất là khi xong task liên quan):
 | 2026-11-26 | Thu hẹp điều kiện chạy CI: pull request vào `main` và push lên `main` (§4, §11.6); W1-03 gỡ tùy chọn tạm cho phép "không có test nào chạy" trong CI (§14) | Chủ dự án |
 | 2026-11-26 | Duyệt Microsoft.AspNetCore.Mvc.Testing cho integration test (§4); ghi rõ đường dẫn đầy đủ `/api/health/...` của các endpoint health (§9, §11.3, §11.4, §11.6) | Chủ dự án |
 | 2026-11-26 | Mã lỗi chung (gồm các mã dự phòng `conflict`, `bad_request`, `service_unavailable`), câu báo lỗi tiếng Anh do frontend dịch, enum dạng chuỗi, đường dẫn tài liệu API (§9) | Chủ dự án |
+| 2026-11-26 | Identity: mã lỗi `email_taken`, `invalid_credentials`, `csrf_header_missing` (§9); bắt đăng nhập mặc định cho mọi controller thay vì fallback policy, để route không tồn tại vẫn trả `404`; Data Protection nạp khóa từ database lúc khởi động (§11.3) (#14) | Chủ dự án |
 
 ---
 

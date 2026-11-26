@@ -18,6 +18,9 @@ public static class ErrorCodes
     public const string ServiceUnavailable = "service_unavailable";
     public const string DatabaseUnavailable = "database_unavailable";
 
+    // Codes with a fixed meaning beyond their status (Workflow.md §9).
+    public const string CsrfHeaderMissing = "csrf_header_missing";
+
     /// <summary>
     /// The generic code for a status, used when nothing more specific set one.
     /// Unlisted client errors (4xx) → "bad_request"; unlisted server errors (5xx) → "internal_error".

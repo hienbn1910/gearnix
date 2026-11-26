@@ -234,6 +234,7 @@ These are the reason the project exists. Breaking any of them is a critical bug.
 | ✅ Local connection string | `dotnet user-secrets set "Database:ConnectionString" "Host=127.0.0.1;Port=<POSTGRES_PORT>;Database=gearnix;Username=gearnix;Password=<POSTGRES_PASSWORD>" --project src/Api` |
 | ✅ Add migration | `dotnet ef migrations add <Name> --project src/Api --output-dir Data/Migrations` |
 | ✅ Apply migrations (local only) | `dotnet ef database update --project src/Api` |
+| ✅ Seed (local) | `dotnet run --project src/Api -- seed` (needs `Seed:StaffPassword`/`Seed:AdminPassword` in user-secrets; idempotent) |
 | Build migration bundle (deploy) | `dotnet ef migrations bundle --project src/Api` |
 | Storefront dev | `cd src/web/storefront && npm install && npm run dev` |
 | Admin dev | `cd src/web/admin && npm install && npm run dev` |

@@ -4,6 +4,7 @@ namespace Gearnix.Api.Common.Errors;
 public enum ErrorKind
 {
     Validation,
+    Unauthorized,
     NotFound,
     Conflict,
     Forbidden,
