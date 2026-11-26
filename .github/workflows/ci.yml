@@ -34,10 +34,8 @@ jobs:
       - name: Check formatting
         run: dotnet format --verify-no-changes --no-restore
 
-      # TODO(W1-03): remove "--ignore-exit-code 8" when the first test is added.
-      # Exit code 8 means "zero tests ran"; the test projects are still empty.
       - name: Test
-        run: dotnet test --configuration Release --no-build --ignore-exit-code 8
+        run: dotnet test --configuration Release --no-build
 
       # `dotnet list package --vulnerable` exits 0 even when it finds vulnerabilities,
       # so the JSON report is inspected and the step fails if any are listed.

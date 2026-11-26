@@ -218,8 +218,8 @@ These are the reason the project exists. Breaking any of them is a critical bug.
 
 ## 9. Commands
 
-> Commands marked ✅ were verified in W1-01. The others are planned: mark them when their task makes them work
-> (migrations: W1-03; frontend: W1-09; load tests: W4-07).
+> Commands marked ✅ have been run for real (W1-01, W1-03). The others are planned: mark them when their task makes them work
+> (migration bundle: W5-03; frontend: W1-09; load tests: W4-07).
 
 | Purpose | Command |
 |---|---|
@@ -230,8 +230,10 @@ These are the reason the project exists. Breaking any of them is a critical bug.
 | ✅ Build | `dotnet build` |
 | ✅ Test (all) | `dotnet test` (Microsoft.Testing.Platform runner, set in `global.json`) |
 | ✅ Format | `dotnet format`; CI-style check: `dotnet format --verify-no-changes` |
-| Add migration | `dotnet ef migrations add <Name> --project src/Api --output-dir Data/Migrations` |
-| Apply migrations (local only) | `dotnet ef database update --project src/Api` |
+| ✅ Restore repo tools | `dotnet tool restore` (installs `dotnet-ef` 10.x from `.config/dotnet-tools.json`) |
+| ✅ Local connection string | `dotnet user-secrets set "Database:ConnectionString" "Host=127.0.0.1;Port=<POSTGRES_PORT>;Database=gearnix;Username=gearnix;Password=<POSTGRES_PASSWORD>" --project src/Api` |
+| ✅ Add migration | `dotnet ef migrations add <Name> --project src/Api --output-dir Data/Migrations` |
+| ✅ Apply migrations (local only) | `dotnet ef database update --project src/Api` |
 | Build migration bundle (deploy) | `dotnet ef migrations bundle --project src/Api` |
 | Storefront dev | `cd src/web/storefront && npm install && npm run dev` |
 | Admin dev | `cd src/web/admin && npm install && npm run dev` |
@@ -241,7 +243,7 @@ These are the reason the project exists. Breaking any of them is a critical bug.
 | Issues | `gh issue list`, `gh issue view <n>` |
 | Open PR (after the human pushed) | `gh pr create --body-file <file>` |
 
-Integration tests need Docker running (Testcontainers).
+Integration tests need Docker running (Testcontainers starts its own PostgreSQL 17; the local database is not used).
 
 ---
 

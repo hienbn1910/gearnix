@@ -3,6 +3,17 @@
   <!-- Target framework, nullable, implicit usings and warnings-as-errors come from Directory.Build.props. -->
   <PropertyGroup>
     <RootNamespace>Gearnix.Api</RootNamespace>
+    <UserSecretsId>d4b44038-407d-42e4-9205-b534d6638f0f</UserSecretsId>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="EFCore.NamingConventions" />
+    <!-- Design-time only (dotnet ef); not shipped with the application. -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+  </ItemGroup>
 
 </Project>
