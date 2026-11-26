@@ -31,4 +31,15 @@ public sealed class GearnixApiFactory(string? connectionString, string environme
             services.AddValidatorsFromAssemblyContaining<GearnixApiFactory>();
         });
     }
+
+    /// <summary>
+    /// A client that behaves like the frontend: it sends the CSRF header on every request (Workflow.md §11.5).
+    /// Use <c>CreateClient()</c> only to test what happens without it.
+    /// </summary>
+    public HttpClient CreateApiClient()
+    {
+        var client = CreateClient();
+        client.DefaultRequestHeaders.Add("X-CSRF", "1");
+        return client;
+    }
 }

@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using FluentValidation;
 
 using Gearnix.Api.Common.Errors;
+using Gearnix.Api.Common.Security;
 using Gearnix.Api.Common.Validation;
 using Gearnix.Api.Data;
 
@@ -59,6 +60,9 @@ app.UseExceptionHandler();
 
 // Error responses without a body (unknown route, wrong method) become ProblemDetails.
 app.UseStatusCodePages();
+
+// State-changing requests must carry X-CSRF: 1 (Workflow.md §11.5).
+app.UseMiddleware<CsrfHeaderMiddleware>();
 
 app.MapControllers();
 

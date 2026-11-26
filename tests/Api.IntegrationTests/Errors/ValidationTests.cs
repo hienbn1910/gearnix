@@ -14,7 +14,7 @@ public sealed class ValidationTests
     public async Task Post_InvalidBody_Returns400WithFieldErrors()
     {
         await using var factory = new GearnixApiFactory(GearnixApiFactory.UnreachableConnectionString);
-        using var client = factory.CreateClient();
+        using var client = factory.CreateApiClient();
 
         var response = await client.PostAsJsonAsync(
             Path, new { name = "", quantity = 0, kind = "Conflict" }, TestContext.Current.CancellationToken);
@@ -33,7 +33,7 @@ public sealed class ValidationTests
     public async Task Post_MalformedJson_Returns400ValidationFailed()
     {
         await using var factory = new GearnixApiFactory(GearnixApiFactory.UnreachableConnectionString);
-        using var client = factory.CreateClient();
+        using var client = factory.CreateApiClient();
 
         using var content = new StringContent("{ \"name\": ", Encoding.UTF8, "application/json");
         var problem = await ProblemResponse.ReadAsync(
@@ -48,7 +48,7 @@ public sealed class ValidationTests
     public async Task Post_ValidBody_Returns200WithEnumAsString()
     {
         await using var factory = new GearnixApiFactory(GearnixApiFactory.UnreachableConnectionString);
-        using var client = factory.CreateClient();
+        using var client = factory.CreateApiClient();
 
         var response = await client.PostAsJsonAsync(
             Path, new { name = "Nova X", quantity = 2, kind = "Conflict" }, TestContext.Current.CancellationToken);
@@ -62,7 +62,7 @@ public sealed class ValidationTests
     public async Task Post_UnknownEnumValue_Returns400WithoutInternalTypeNames()
     {
         await using var factory = new GearnixApiFactory(GearnixApiFactory.UnreachableConnectionString);
-        using var client = factory.CreateClient();
+        using var client = factory.CreateApiClient();
 
         var problem = await ProblemResponse.ReadAsync(await client.PostAsJsonAsync(
             Path, new { name = "Nova X", quantity = 2, kind = "NotAKind" }, TestContext.Current.CancellationToken));
