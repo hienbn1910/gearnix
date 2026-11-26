@@ -1,3 +1,4 @@
+using Gearnix.Api.Common.Errors;
 using Gearnix.Api.Data;
 
 using Microsoft.AspNetCore.Mvc;
@@ -24,4 +25,14 @@ public sealed class TestErrorsController : ControllerBase
         await dbContext.Database.ExecuteSqlAsync($"SELECT 1", cancellationToken);
         return Ok();
     }
+
+    [HttpGet("business-conflict")]
+    public IActionResult BusinessConflict() => FromResult(new Error("out_of_stock", ErrorKind.Conflict));
+
+    [HttpGet("business-not-found")]
+    public IActionResult BusinessNotFound() => FromResult(new Error(ErrorCodes.NotFound, ErrorKind.NotFound));
+
+    // The way a real controller handles a service result.
+    private IActionResult FromResult(Result<string> result) =>
+        result.IsSuccess ? Ok(result.Value) : this.ToProblem(result.Error);
 }

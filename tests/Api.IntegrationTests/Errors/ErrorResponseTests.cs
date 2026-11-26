@@ -51,4 +51,21 @@ public sealed class ErrorResponseTests
         Assert.Equal("database_unavailable", problem.Code);
         Assert.False(string.IsNullOrEmpty(problem.TraceId));
     }
+
+    [Theory]
+    [InlineData("/api/test-errors/business-conflict", HttpStatusCode.Conflict, "out_of_stock")]
+    [InlineData("/api/test-errors/business-not-found", HttpStatusCode.NotFound, "not_found")]
+    public async Task BusinessError_ReturnedFromResult_ReturnsKindStatusAndErrorCode(
+        string path, HttpStatusCode expectedStatus, string expectedCode)
+    {
+        await using var factory = new GearnixApiFactory(GearnixApiFactory.UnreachableConnectionString);
+        using var client = factory.CreateClient();
+
+        var problem = await ProblemResponse.ReadAsync(await client.GetAsync(path, TestContext.Current.CancellationToken));
+
+        Assert.Equal(expectedStatus, problem.Status);
+        Assert.Equal("application/problem+json", problem.ContentType);
+        Assert.Equal(expectedCode, problem.Code);
+        Assert.False(string.IsNullOrEmpty(problem.TraceId));
+    }
 }
