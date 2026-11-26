@@ -101,7 +101,7 @@ e-invoices, email sending, Kubernetes.
 | Seed data | Bogus | Referenced by the API project; the seeder runs only in `Development`, `Demo` and `LoadTest` (§13.4) |
 | Load tests | k6 | |
 | Local environment | Docker Compose | |
-| CI | GitHub Actions | Build, test and lint on every push and pull request |
+| CI | GitHub Actions | Build, test and lint on every pull request into `main` and every push to `main` |
 | Hosting | VPS + Docker Compose + Caddy (HTTPS) | Provider chosen at W5-03 (§11.6) |
 | AI (bonus) | Microsoft.Extensions.AI | Ollama locally; a hosted model for the demo |
 | Task tracking | GitHub Issues + milestones, `gh` CLI | Specs live in issues (§17) |
@@ -757,7 +757,7 @@ These are **targets to verify, not measured results**. After the first k6 run, a
 | `Demo` | Public deployment | Mock gateway on, demo seed data, 1-minute payment timeout |
 
 - **Configuration** uses options classes validated at startup (`ValidateOnStart`), so missing configuration fails immediately.
-- **CI** (every push and pull request): build, tests, lint, vulnerability checks.
+- **CI** (every pull request into `main` and every push to `main`; feature-branch pushes are covered by their pull request): build, tests, lint, vulnerability checks.
 - **Images:** on every merge to `main`, Docker images are built, tagged with the git commit SHA and pushed to GitHub Container Registry.
 - **Deploy** (manual `workflow_dispatch`, over SSH): back up the database → `docker compose pull` → run the EF Core
   **migration bundle** → run the `seed` command (idempotent, §13.4) → `docker compose up -d` → wait for `/health/ready`.
@@ -912,6 +912,7 @@ Every task follows the full process in `Rule.md` §1.
   *Done when:* a pull request shows green checks.
 - [ ] **W1-03** Data foundation: `AppDbContext`, snake_case naming, UTC and decimal conventions, `TimeProvider`,
   connection pool settings, options validation at startup, first migration, `/health/live` and `/health/ready`.
+  Also remove the CI allowance `--ignore-exit-code 8` once the first test exists (from W1-02, #8).
 - [ ] **W1-04** Error handling and API docs: ProblemDetails with `code` and `traceId`, FluentValidation wiring,
   standard list response types (§9), OpenAPI + Scalar.
 - [ ] **W1-05** Identity: register, login, logout, me; cookie settings (§11.5); `401`/`403` instead of redirects;
@@ -1060,6 +1061,7 @@ ADRs to write (no later than when the related task is done):
 | 2026-11-21 | Product renamed to Gearnix (repository `gearnix`); order number prefix `GN-` (previously logged as 2026-11-22, a time-zone mix-up) | Project owner |
 | 2026-11-21 | Editorial rewrite of `Workflow.md` and `Workflow.vi.md`: wording, structure and tables only; no change to scope or rules; open questions marked **[To be confirmed]** and collected in §20 | Project owner |
 | 2026-11-23 | Open questions resolved: only WarehouseStaff ship/complete (§3); approved packages added to §4; `CancelReason` replaced by `ExpiredAt` (§6.3); webhook carries `paymentId` (§7.9); error code `adjustment_below_reserved` (§9); L1 load set in requests/s (§11.2); hosting decided at W5-03 (§11.6); `seed` command and per-task seeding (§13.4, §11.6); frontend CI jobs move to W1-09 (§14) | Project owner |
+| 2026-11-26 | CI triggers narrowed to pull requests into `main` and pushes to `main` (§4, §11.6); W1-03 removes the temporary CI allowance for "zero tests ran" (§14) | Project owner |
 
 ---
 

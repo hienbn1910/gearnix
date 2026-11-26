@@ -72,6 +72,7 @@ user-invoked skills start with `/`.
 
 11. **Commit** — small commits on the task branch, each one building and passing tests.
     Format: `type(module): summary (#issue)`, e.g. `feat(inventory): reserve stock atomically (#14)`.
+    Exception: automated Dependabot pull requests use `chore(deps): …` and carry no issue number.
 12. **Hand over** — post the self-review report (section 12) and a PR body written with the `pr` skill,
     including `Closes #<issue>`. Then **stop**.
 13. **The human pushes** the branch. After that the agent may open the PR with `gh pr create`.
