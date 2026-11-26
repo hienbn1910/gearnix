@@ -14,6 +14,12 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         optionsBuilder.UseSnakeCaseNamingConvention();
     }
 
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        // Trigram matching for Vietnamese product search (Workflow.md §10).
+        modelBuilder.HasPostgresExtension("pg_trgm");
+    }
+
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
         // Money is always numeric(18,2) (Workflow.md §6, Rule.md §4).
