@@ -907,10 +907,10 @@ Every task follows the full process in `Rule.md` §1.
 - [x] **W1-01** (#6) Repository setup: solution, folders per `Rule.md` §2, `.editorconfig`, `Directory.Build.props`
   (nullable enabled, warnings as errors), `docker-compose.yml` (PostgreSQL), `.gitignore`, README skeleton.
   *Done when:* `docker compose up -d` followed by `dotnet run` starts the API.
-- [ ] **W1-02** (#8) CI with GitHub Actions: backend build and tests, .NET vulnerability check; Dependabot.
+- [x] **W1-02** (#8) CI with GitHub Actions: backend build and tests, .NET vulnerability check; Dependabot.
   Frontend jobs are added in W1-09, once the apps exist.
   *Done when:* a pull request shows green checks.
-- [ ] **W1-03** Data foundation: `AppDbContext`, snake_case naming, UTC and decimal conventions, `TimeProvider`,
+- [ ] **W1-03** (#10) Data foundation: `AppDbContext`, snake_case naming, UTC and decimal conventions, `TimeProvider`,
   connection pool settings, options validation at startup, first migration, `/health/live` and `/health/ready`.
   Also remove the CI allowance `--ignore-exit-code 8` once the first test exists (from W1-02, #8).
 - [ ] **W1-04** Error handling and API docs: ProblemDetails with `code` and `traceId`, FluentValidation wiring,

@@ -907,10 +907,10 @@ Mọi task đi theo quy trình đầy đủ ở `Rule.md` §1.
 - [x] **W1-01** (#6) Dựng repository: solution, thư mục theo `Rule.md` §2, `.editorconfig`, `Directory.Build.props`
   (bật nullable, coi cảnh báo là lỗi), `docker-compose.yml` (PostgreSQL), `.gitignore`, khung README.
   *Xong khi:* chạy `docker compose up -d` rồi `dotnet run` thì API khởi động được.
-- [ ] **W1-02** (#8) CI bằng GitHub Actions: build và test backend, kiểm tra lỗ hổng thư viện .NET; Dependabot.
+- [x] **W1-02** (#8) CI bằng GitHub Actions: build và test backend, kiểm tra lỗ hổng thư viện .NET; Dependabot.
   Job cho frontend được thêm ở W1-09, khi các app đã tồn tại.
   *Xong khi:* một pull request hiện dấu tích xanh.
-- [ ] **W1-03** Nền tảng dữ liệu: `AppDbContext`, đặt tên snake_case, quy ước UTC và decimal, `TimeProvider`,
+- [ ] **W1-03** (#10) Nền tảng dữ liệu: `AppDbContext`, đặt tên snake_case, quy ước UTC và decimal, `TimeProvider`,
   cấu hình connection pool, kiểm tra options khi khởi động, migration đầu tiên, `/health/live` và `/health/ready`.
   Đồng thời gỡ tùy chọn CI `--ignore-exit-code 8` khi đã có test đầu tiên (từ W1-02, #8).
 - [ ] **W1-04** Xử lý lỗi và tài liệu API: ProblemDetails có `code` và `traceId`, nối FluentValidation,
