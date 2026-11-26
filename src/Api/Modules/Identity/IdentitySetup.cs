@@ -67,6 +67,7 @@ public static class IdentitySetup
         services.AddScoped<ICurrentUser, CurrentUser>();
         services.AddScoped<AuthService>();
         services.AddScoped<IdentitySeeder>();
+        services.AddOptions<IdentitySeedOptions>().BindConfiguration(IdentitySeedOptions.SectionName);
         return services;
     }
 }

@@ -7,6 +7,7 @@ using Gearnix.Api.Common.Errors;
 using Gearnix.Api.Common.Security;
 using Gearnix.Api.Common.Validation;
 using Gearnix.Api.Data;
+using Gearnix.Api.Data.Seeding;
 using Gearnix.Api.Modules.Identity;
 
 using Microsoft.AspNetCore.Mvc;
@@ -61,6 +62,12 @@ builder.Services.AddHealthChecks()
 
 var app = builder.Build();
 
+// `dotnet run --project src/Api -- seed`: seed the database and exit, without starting the web server.
+if (SeedCommand.IsRequested(args))
+{
+    return await SeedCommand.RunAsync(app.Services, CancellationToken.None);
+}
+
 app.UseExceptionHandler();
 
 // Error responses without a body (unknown route, wrong method) become ProblemDetails.
@@ -91,4 +98,5 @@ app.MapHealthChecks("/api/health/live", new() { Predicate = _ => false })
 app.MapHealthChecks("/api/health/ready", new() { Predicate = check => check.Tags.Contains("ready") })
     .AllowAnonymous();
 
-app.Run();
+await app.RunAsync();
+return 0;

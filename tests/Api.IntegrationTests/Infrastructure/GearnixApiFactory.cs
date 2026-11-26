@@ -1,21 +1,23 @@
 using FluentValidation;
 
 using Microsoft.AspNetCore.Authentication;
-
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Gearnix.Api.IntegrationTests.Infrastructure;
 
 /// <summary>
 /// Runs the API in memory against the given database connection string, in the Test environment unless another
-/// environment is given.
+/// environment is given. Extra settings override every other configuration source.
 /// </summary>
-public sealed class GearnixApiFactory(string? connectionString, string environment = "Test")
-    : WebApplicationFactory<Program>
+public sealed class GearnixApiFactory(
+    string? connectionString,
+    string environment = "Test",
+    IReadOnlyDictionary<string, string?>? settings = null) : WebApplicationFactory<Program>
 {
     private const string TestOrCookieScheme = "TestOrCookie";
 
@@ -26,8 +28,13 @@ public sealed class GearnixApiFactory(string? connectionString, string environme
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment(environment);
-        // Always set the value, so a Database__ConnectionString environment variable can never leak into a test.
-        builder.UseSetting("Database:ConnectionString", connectionString ?? "");
+        // Added last, so these win over appsettings, user-secrets (loaded in Development) and environment variables.
+        // The connection string is always set, so a machine's own value can never leak into a test.
+        builder.ConfigureAppConfiguration((_, configuration) => configuration.AddInMemoryCollection(
+            new Dictionary<string, string?>(settings ?? new Dictionary<string, string?>())
+            {
+                ["Database:ConnectionString"] = connectionString ?? "",
+            }));
 
         // Adds the test-only controllers and validators of this assembly (e.g. TestErrorsController).
         builder.ConfigureTestServices(services =>
