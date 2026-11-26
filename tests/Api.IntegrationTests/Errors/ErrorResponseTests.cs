@@ -37,4 +37,18 @@ public sealed class ErrorResponseTests
         Assert.DoesNotContain("secret internal detail", problem.RawBody);
         Assert.DoesNotContain("InvalidOperationException", problem.RawBody);
     }
+
+    [Fact]
+    public async Task DatabaseQuery_DatabaseUnreachable_Returns503()
+    {
+        await using var factory = new GearnixApiFactory(GearnixApiFactory.UnreachableConnectionString);
+        using var client = factory.CreateClient();
+
+        var problem = await ProblemResponse.ReadAsync(
+            await client.GetAsync("/api/test-errors/query-database", TestContext.Current.CancellationToken));
+
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, problem.Status);
+        Assert.Equal("database_unavailable", problem.Code);
+        Assert.False(string.IsNullOrEmpty(problem.TraceId));
+    }
 }

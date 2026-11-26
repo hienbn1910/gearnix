@@ -1,4 +1,7 @@
+using Gearnix.Api.Data;
+
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Gearnix.Api.IntegrationTests.Infrastructure;
 
@@ -14,4 +17,11 @@ public sealed class TestErrorsController : ControllerBase
 
     [HttpGet("unhandled")]
     public IActionResult Unhandled() => throw new InvalidOperationException(SecretExceptionMessage);
+
+    [HttpGet("query-database")]
+    public async Task<IActionResult> QueryDatabase([FromServices] AppDbContext dbContext, CancellationToken cancellationToken)
+    {
+        await dbContext.Database.ExecuteSqlAsync($"SELECT 1", cancellationToken);
+        return Ok();
+    }
 }
