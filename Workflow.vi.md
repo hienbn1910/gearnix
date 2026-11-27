@@ -335,7 +335,7 @@ Hạn thanh toán lưu ở đơn hàng (`orders.ExpiresAt`), không lưu ở res
 | Bảng | Index / ràng buộc | Dùng cho |
 |---|---|---|
 | categories | unique `Slug`; `(ParentId)` | Cây danh mục |
-| products | unique `Slug`; `(CategoryId)`; `(MinPrice)`; `(CreatedAt, Id)`; GIN trigram trên `NameNormalized` | Danh sách catalog, danh sách admin (mới nhất trước), tìm kiếm |
+| products | unique `Slug`; `(CategoryId)`; `(MinPrice)`; `(CreatedAt, Id)`; `lower(Brand)`; GIN trigram trên `NameNormalized` | Danh sách catalog, danh sách admin (mới nhất trước), lọc theo brand, tìm kiếm |
 | skus | unique `SkuCode`; `(ProductId)` | Chi tiết sản phẩm, đặt hàng |
 | stock_items | unique `(SkuId, WarehouseId)`; `(WarehouseId)` | Giữ hàng, tổng quan tồn kho |
 | stock_movements | `(SkuId, WarehouseId, CreatedAt, Id)` | Trang sổ biến động (phân trang keyset) |
@@ -635,7 +635,7 @@ tối đa hai cấp).
 
 **Định dạng phản hồi**
 
-- Danh sách phân trang theo trang: `{ items, page, pageSize, totalCount }` (`pageSize` mặc định 20, tối đa 100).
+- Danh sách phân trang theo trang: `{ items, page, pageSize, totalCount }` (`pageSize` mặc định 20, tối đa 100; `page` tối đa 10.000).
 - Danh sách phân trang keyset: `{ items, nextCursor }` (`nextCursor` là `null` ở trang cuối).
 - Enum được trả về dạng chuỗi (ví dụ `"PendingPayment"`).
 - Tài liệu API: tài liệu OpenAPI ở `/api/openapi/v1.json` và trang Scalar ở `/api/docs`, chỉ bật ở `Development` và `Demo`.
@@ -1084,7 +1084,7 @@ Các ADR cần viết (chậm nhất là khi xong task liên quan):
 | 2026-11-26 | Mã lỗi chung (gồm các mã dự phòng `conflict`, `bad_request`, `service_unavailable`), câu báo lỗi tiếng Anh do frontend dịch, enum dạng chuỗi, đường dẫn tài liệu API (§9) | Chủ dự án |
 | 2026-11-26 | Identity: mã lỗi `email_taken`, `invalid_credentials`, `csrf_header_missing` (§9); bắt đăng nhập mặc định cho mọi controller thay vì fallback policy, để route không tồn tại vẫn trả `404`; Data Protection nạp khóa từ database lúc khởi động (§11.3) (#14) | Chủ dự án |
 | 2026-11-27 | Catalog: `MinPrice` cho phép `null`, thêm `CreatedAt`/`UpdatedAt` cho các bảng catalog (§6.1); index cho categories và products `(CreatedAt, Id)` (§6.6); mã lỗi `sku_code_taken`, `slug_conflict`, `category_not_found`, `invalid_category_parent` (§9) (#17) | Chủ dự án |
-| 2026-11-27 | Catalog công khai: `GET /categories` trả cả cây danh mục, không phân trang; giá trị `sort` của sản phẩm là `newest`, `priceAsc`, `priceDesc` (§9); W1-07 để `q`/`relevance` cho W4-05 và cache cho W4-06 (§14) (#22) | Chủ dự án |
+| 2026-11-27 | Catalog công khai: `GET /categories` trả cả cây danh mục, không phân trang; giá trị `sort` của sản phẩm là `newest`, `priceAsc`, `priceDesc` (§9); W1-07 để `q`/`relevance` cho W4-05 và cache cho W4-06 (§14); index `lower(Brand)` cho products (§6.6); `page` tối đa 10.000 (§9) (#22) | Chủ dự án |
 
 ---
 

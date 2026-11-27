@@ -21,6 +21,9 @@ public sealed class ProductConfiguration : IEntityTypeConfiguration<Product>
         // Trigram index: fast "contains" search on the normalized name (Workflow.md §10).
         product.HasIndex(p => p.NameNormalized).HasMethod("gin").HasOperators("gin_trgm_ops");
 
+        // The storefront brand filter uses an index on lower(brand); EF Core cannot describe an expression index,
+        // so it is created in SQL by the AddProductBrandIndex migration.
+
         // The foreign key also creates the (CategoryId) index from Workflow.md §6.6.
         product.HasOne<Category>().WithMany().HasForeignKey(p => p.CategoryId).OnDelete(DeleteBehavior.Restrict);
     }
