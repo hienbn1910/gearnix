@@ -936,7 +936,7 @@ Mọi task đi theo quy trình đầy đủ ở `Rule.md` §1.
   WarehouseStaff/Admin (§13.4); policy phân quyền; cơ chế xác thực dành cho integration test.
   *Xong khi:* có test chứng minh các trường hợp `401`, `403`, thiếu CSRF và khóa tài khoản.
 - [x] **W1-06** (#17) Quản trị Catalog: danh mục, sản phẩm, SKU (DTO, validator, sinh slug, cập nhật `MinPrice`).
-- [ ] **W1-07** (#22) Catalog công khai: cây danh mục, danh sách sản phẩm (lọc, sắp xếp, phân trang) và chi tiết sản phẩm;
+- [x] **W1-07** (#22) Catalog công khai: cây danh mục, danh sách sản phẩm (lọc, sắp xếp, phân trang) và chi tiết sản phẩm;
   chỉ sản phẩm hiển thị được. Tìm kiếm `q` và kiểu sắp xếp `relevance` làm ở W4-05, cache ở W4-06.
 - [ ] **W1-08** Dữ liệu mẫu bằng Bogus (§13.4): danh mục, sản phẩm, SKU và khách demo. **Chưa có tồn kho** (thêm ở W2-03).
 - [ ] **W1-09** Dựng frontend: hai app Vite, routing, Tailwind, TanStack Query, sinh kiểu API,
