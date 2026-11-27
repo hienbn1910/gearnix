@@ -24,9 +24,8 @@ public sealed class ValidationTests
         Assert.Equal("application/problem+json", problem.ContentType);
         Assert.Equal("validation_failed", problem.Code);
         Assert.False(string.IsNullOrEmpty(problem.TraceId));
-        var errors = problem.Body.GetProperty("errors");
-        Assert.True(errors.TryGetProperty("name", out _), problem.RawBody);
-        Assert.True(errors.TryGetProperty("quantity", out _), problem.RawBody);
+        var keys = problem.Body.GetProperty("errors").EnumerateObject().Select(error => error.Name).Order();
+        Assert.Equal(["name", "quantity"], keys);
     }
 
     [Fact]

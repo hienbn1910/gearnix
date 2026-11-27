@@ -20,7 +20,7 @@ public static class ProblemDetailsSetup
 
             if (problem is HttpValidationProblemDetails validationProblem)
             {
-                ValidationErrorKeys.ToCamelCase(validationProblem.Errors);
+                ValidationErrorKeys.RewriteKeysToCamelCase(validationProblem.Errors);
             }
         });
 }

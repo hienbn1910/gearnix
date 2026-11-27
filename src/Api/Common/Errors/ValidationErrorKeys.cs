@@ -9,11 +9,13 @@ namespace Gearnix.Api.Common.Errors;
 /// <remarks>
 /// Done once, on the finished response, because errors arrive keyed by C# property names from two places:
 /// FluentValidation ("PageSize") and model binding of query values ("The value 'abc' is not valid…").
+/// It runs for every validation problem built by <c>ProblemDetailsFactory</c>; one built by hand with
+/// <c>new ValidationProblemDetails(...)</c> would skip it, so always go through the factory.
 /// </remarks>
 public static class ValidationErrorKeys
 {
-    /// <summary>Rewrites every key to camelCase; keys that become equal keep all their messages.</summary>
-    public static void ToCamelCase(IDictionary<string, string[]> errors)
+    /// <summary>Rewrites every key of the map in place to camelCase; keys that become equal keep all their messages.</summary>
+    public static void RewriteKeysToCamelCase(IDictionary<string, string[]> errors)
     {
         var original = errors.ToList();
         errors.Clear();
