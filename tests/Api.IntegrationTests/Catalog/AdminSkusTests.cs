@@ -29,7 +29,7 @@ public sealed class AdminSkusTests(PostgresFixture postgres)
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         Assert.NotNull(sku);
-        Assert.Equal($"/api/admin/products/{product.Id}/skus/{sku.Id}", response.Headers.Location?.OriginalString);
+        Assert.Equal($"/api/admin/products/{product.Id}", response.Headers.Location?.OriginalString);
         Assert.Equal(product.Id, sku.ProductId);
         Assert.Equal(code, sku.SkuCode); // stored upper case and trimmed
         Assert.Equal("128GB - Đen", sku.VariantName);

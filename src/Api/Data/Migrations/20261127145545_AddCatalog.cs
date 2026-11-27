@@ -105,6 +105,11 @@ namespace Gearnix.Api.Data.Migrations
                 column: "category_id");
 
             migrationBuilder.CreateIndex(
+                name: "ix_products_created_at_id",
+                table: "products",
+                columns: new[] { "created_at", "id" });
+
+            migrationBuilder.CreateIndex(
                 name: "ix_products_min_price",
                 table: "products",
                 column: "min_price");

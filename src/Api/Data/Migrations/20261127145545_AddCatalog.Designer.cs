@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Gearnix.Api.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20261127144258_AddCatalog")]
+    [Migration("20261127145545_AddCatalog")]
     partial class AddCatalog
     {
         /// <inheritdoc />
@@ -148,6 +148,9 @@ namespace Gearnix.Api.Data.Migrations
                     b.HasIndex("Slug")
                         .IsUnique()
                         .HasDatabaseName("ix_products_slug");
+
+                    b.HasIndex("CreatedAt", "Id")
+                        .HasDatabaseName("ix_products_created_at_id");
 
                     b.ToTable("products", (string)null);
                 });

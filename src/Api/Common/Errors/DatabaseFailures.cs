@@ -3,7 +3,7 @@ using Npgsql;
 namespace Gearnix.Api.Common.Errors;
 
 /// <summary>
-/// Decides whether an exception means "the database is temporarily unavailable" (→ 503, Workflow.md §11.3).
+/// Classifies database exceptions: "temporarily unavailable" (→ 503, Workflow.md §11.3) and unique-index violations.
 /// </summary>
 public static class DatabaseFailures
 {
@@ -31,6 +31,17 @@ public static class DatabaseFailures
 
         return false;
     }
+
+    /// <summary>
+    /// True when a save failed because it would break the named unique index (SQLSTATE 23505), e.g. two requests
+    /// inserting the same SKU code at the same moment. EF Core wraps the Npgsql exception in a DbUpdateException.
+    /// </summary>
+    public static bool IsUniqueViolation(Exception exception, string indexName) =>
+        exception.InnerException is PostgresException
+        {
+            SqlState: PostgresErrorCodes.UniqueViolation,
+        } postgres
+        && postgres.ConstraintName == indexName;
 
     private static bool IsUnavailableSqlState(string sqlState) =>
         sqlState.StartsWith("08", StringComparison.Ordinal)

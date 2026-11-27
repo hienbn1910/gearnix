@@ -1,6 +1,7 @@
 using FluentValidation;
 
 using Gearnix.Api.Modules.Catalog.Dtos;
+using Gearnix.Api.Modules.Catalog.Entities;
 
 namespace Gearnix.Api.Modules.Catalog.Validators;
 
@@ -17,7 +18,7 @@ public sealed class SkuRequestValidator : AbstractValidator<SkuRequest>
 
         // Upper case letters and digits, hyphens only between them, e.g. NOVAX-128-BLK. Compared after upper-casing,
         // the same way the service stores it.
-        RuleFor(request => NormalizeSkuCode(request.SkuCode))
+        RuleFor(request => request.SkuCode == null ? null : Sku.NormalizeCode(request.SkuCode))
             .NotEmpty()
             .Length(SkuCodeMinLength, SkuCodeMaxLength)
             .Matches("^[A-Z0-9]+(-[A-Z0-9]+)*$")
@@ -39,7 +40,4 @@ public sealed class SkuRequestValidator : AbstractValidator<SkuRequest>
 
     // The JSON body may omit a field even though the record declares it non-nullable.
     private static string? Trim(string? value) => value?.Trim();
-
-    /// <summary>Trimmed and upper case; the stored form of a SKU code.</summary>
-    public static string? NormalizeSkuCode(string? skuCode) => skuCode?.Trim().ToUpperInvariant();
 }

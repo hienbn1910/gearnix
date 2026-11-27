@@ -60,7 +60,8 @@ public sealed class AdminProductsController(ProductService productService) : Con
     {
         var result = await productService.CreateSkuAsync(id, request, cancellationToken);
         return result.IsSuccess
-            ? Created($"/api/admin/products/{id}/skus/{result.Value.Id}", result.Value)
+            // A SKU has no GET of its own; it is read as part of its product.
+            ? Created($"/api/admin/products/{id}", result.Value)
             : this.ToProblem(result.Error);
     }
 

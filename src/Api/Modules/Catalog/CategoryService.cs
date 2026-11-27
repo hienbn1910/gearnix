@@ -6,8 +6,6 @@ using Gearnix.Api.Modules.Catalog.Entities;
 
 using Microsoft.EntityFrameworkCore;
 
-using Npgsql;
-
 namespace Gearnix.Api.Modules.Catalog;
 
 /// <summary>Admin management of categories (Workflow.md §6.1, §9).</summary>
@@ -24,19 +22,27 @@ public sealed class CategoryService(CategoryRepository categories, TimeProvider 
 
     public async Task<Result<CategoryResponse>> CreateAsync(CategoryRequest request, CancellationToken cancellationToken)
     {
-        if (request.ParentId is { } parentId && await CheckParentAsync(parentId, cancellationToken) is { } parentError)
-        {
-            return parentError;
-        }
-
         var name = request.Name.Trim();
         var baseSlug = VietnameseText.ToSlug(name);
+        var slug = CatalogSlugs.PickFree(baseSlug, await categories.GetSlugsLikeAsync(baseSlug, cancellationToken));
+
+        await using var transaction = await categories.BeginTransactionAsync(cancellationToken);
+        if (request.ParentId is { } parentId)
+        {
+            // Locked so that nobody gives the parent a parent of its own before this child is saved.
+            await categories.LockAsync([parentId], cancellationToken);
+            if (await CheckParentAsync(parentId, cancellationToken) is { } parentError)
+            {
+                return parentError; // disposing the transaction rolls it back
+            }
+        }
+
         var now = CatalogClock.UtcNow(timeProvider);
         var category = new Category
         {
             Id = Guid.CreateVersion7(),
             Name = name,
-            Slug = CatalogSlugs.PickFree(baseSlug, await categories.GetSlugsLikeAsync(baseSlug, cancellationToken)),
+            Slug = slug,
             ParentId = request.ParentId,
             SortOrder = request.SortOrder,
             CreatedAt = now,
@@ -48,13 +54,16 @@ public sealed class CategoryService(CategoryRepository categories, TimeProvider 
         {
             await categories.SaveChangesAsync(cancellationToken);
         }
-        catch (DbUpdateException exception) when (IsSlugTaken(exception))
+        catch (DbUpdateException exception)
+            when (DatabaseFailures.IsUniqueViolation(exception, CategoryConfiguration.SlugUniqueIndex))
         {
             // Another request with the same name took this slug between our check and our insert.
+            await transaction.RollbackAsync(cancellationToken);
             categories.ClearTracked();
             return CatalogErrors.SlugConflict;
         }
 
+        await transaction.CommitAsync(cancellationToken);
         return CategoryRepository.ToResponse(category);
     }
 
@@ -62,6 +71,13 @@ public sealed class CategoryService(CategoryRepository categories, TimeProvider 
     public async Task<Result<CategoryResponse>> UpdateAsync(
         Guid id, CategoryRequest request, CancellationToken cancellationToken)
     {
+        await using var transaction = await categories.BeginTransactionAsync(cancellationToken);
+
+        // The two-level rule reads other rows (the parent, the children), so the rows involved are locked first:
+        // two Admins moving categories at the same moment are checked one after the other, never both against
+        // the old tree. A new child takes the same lock on its parent (CreateAsync).
+        await categories.LockAsync(request.ParentId is { } newParent ? [id, newParent] : [id], cancellationToken);
+
         var category = await categories.FindAsync(id, cancellationToken);
         if (category is null)
         {
@@ -87,6 +103,7 @@ public sealed class CategoryService(CategoryRepository categories, TimeProvider 
         category.SortOrder = request.SortOrder;
         category.UpdatedAt = CatalogClock.UtcNow(timeProvider);
         await categories.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
         return CategoryRepository.ToResponse(category);
     }
 
@@ -96,10 +113,4 @@ public sealed class CategoryService(CategoryRepository categories, TimeProvider 
         var (exists, grandparentId) = await categories.GetParentIdAsync(parentId, cancellationToken);
         return !exists || grandparentId is not null ? CatalogErrors.InvalidCategoryParent : null;
     }
-
-    private static bool IsSlugTaken(DbUpdateException exception) => exception.InnerException is PostgresException
-    {
-        SqlState: PostgresErrorCodes.UniqueViolation,
-        ConstraintName: CategoryConfiguration.SlugUniqueIndex,
-    };
 }

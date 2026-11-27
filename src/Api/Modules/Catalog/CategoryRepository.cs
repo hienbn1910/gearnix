@@ -3,6 +3,7 @@ using Gearnix.Api.Modules.Catalog.Dtos;
 using Gearnix.Api.Modules.Catalog.Entities;
 
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace Gearnix.Api.Modules.Catalog;
 
@@ -42,6 +43,18 @@ public sealed class CategoryRepository(AppDbContext dbContext)
             .SingleOrDefaultAsync(cancellationToken);
         return found is null ? (false, null) : (true, found.ParentId);
     }
+
+    public Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken) =>
+        dbContext.Database.BeginTransactionAsync(cancellationToken);
+
+    /// <summary>
+    /// Locks the given category rows until the current transaction ends (<c>SELECT … FOR UPDATE</c>), always in id
+    /// order so that two requests locking the same pair cannot deadlock. Unknown ids are skipped.
+    /// </summary>
+    public async Task LockAsync(Guid[] ids, CancellationToken cancellationToken) =>
+        await dbContext.Database
+            .SqlQuery<Guid>($"SELECT id AS \"Value\" FROM categories WHERE id = ANY({ids}) ORDER BY id FOR UPDATE")
+            .ToListAsync(cancellationToken);
 
     public Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken) =>
         dbContext.Categories.AnyAsync(c => c.Id == id, cancellationToken);

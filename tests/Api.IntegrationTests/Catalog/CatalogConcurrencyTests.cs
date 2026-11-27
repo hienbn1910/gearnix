@@ -86,4 +86,70 @@ public sealed class CatalogConcurrencyTests(PostgresFixture postgres)
         var slugs = created.Select(category => category!.Slug).ToList();
         Assert.Equal(slugs.Count, slugs.Distinct().Count());
     }
+
+    [Fact]
+    public async Task CreateProduct_ParallelSameName_DistinctSlugsAndNoServerError()
+    {
+        await using var factory = new GearnixApiFactory(postgres.ConnectionString);
+        using var admin = factory.CreateApiClientAs(Guid.CreateVersion7(), "Admin");
+        var category = await CreateCategoryAsync(admin);
+        var name = UniqueName("Cùng tên");
+
+        var responses = await Task.WhenAll(Enumerable.Range(0, Parallel).Select(_ =>
+            admin.PostAsJsonAsync("/api/admin/products", new { categoryId = category.Id, name, brand = "Kivo" }, Token)));
+        var created = await Task.WhenAll(responses
+            .Where(response => response.StatusCode == HttpStatusCode.Created)
+            .Select(response => response.Content.ReadFromJsonAsync<ProductBody>(Token)));
+        var problems = await Task.WhenAll(responses
+            .Where(response => response.StatusCode != HttpStatusCode.Created)
+            .Select(ProblemResponse.ReadAsync));
+
+        Assert.NotEmpty(created);
+        Assert.All(problems, problem => Assert.Equal("slug_conflict", problem.Code));
+        var slugs = created.Select(product => product!.Slug).ToList();
+        Assert.Equal(slugs.Count, slugs.Distinct().Count());
+    }
+
+    [Fact]
+    public async Task UpdateCategory_ParallelMovesThatTogetherMakeThreeLevels_AtMostOneSucceeds()
+    {
+        await using var factory = new GearnixApiFactory(postgres.ConnectionString);
+        using var admin = factory.CreateApiClientAs(Guid.CreateVersion7(), "Admin");
+
+        for (var round = 0; round < 10; round++)
+        {
+            var a = await CreateCategoryAsync(admin);
+            var b = await CreateCategoryAsync(admin);
+            var c = await CreateCategoryAsync(admin);
+
+            // Each move is fine alone; together they would put C under B under A.
+            var responses = await Task.WhenAll(
+                admin.PutAsJsonAsync($"/api/admin/categories/{b.Id}", new { name = b.Name, parentId = a.Id }, Token),
+                admin.PutAsJsonAsync($"/api/admin/categories/{c.Id}", new { name = c.Name, parentId = b.Id }, Token));
+
+            Assert.Single(responses, response => response.StatusCode == HttpStatusCode.OK);
+            Assert.Single(responses, response => response.StatusCode == HttpStatusCode.BadRequest);
+        }
+    }
+
+    [Fact]
+    public async Task CategoryParentRules_ReadByTwoMovesAtOnce_NoDeadlock()
+    {
+        await using var factory = new GearnixApiFactory(postgres.ConnectionString);
+        using var admin = factory.CreateApiClientAs(Guid.CreateVersion7(), "Admin");
+
+        for (var round = 0; round < 10; round++)
+        {
+            var a = await CreateCategoryAsync(admin);
+            var b = await CreateCategoryAsync(admin);
+
+            // Each tries to become the other's child; both lock the same two rows, in the same order.
+            var responses = await Task.WhenAll(
+                admin.PutAsJsonAsync($"/api/admin/categories/{a.Id}", new { name = a.Name, parentId = b.Id }, Token),
+                admin.PutAsJsonAsync($"/api/admin/categories/{b.Id}", new { name = b.Name, parentId = a.Id }, Token));
+
+            Assert.Single(responses, response => response.StatusCode == HttpStatusCode.OK);
+            Assert.Single(responses, response => response.StatusCode == HttpStatusCode.BadRequest);
+        }
+    }
 }

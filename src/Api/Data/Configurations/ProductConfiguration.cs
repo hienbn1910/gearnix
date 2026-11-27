@@ -17,6 +17,7 @@ public sealed class ProductConfiguration : IEntityTypeConfiguration<Product>
 
         product.HasIndex(p => p.Slug).IsUnique().HasDatabaseName(SlugUniqueIndex);
         product.HasIndex(p => p.MinPrice); // price filter and sort
+        product.HasIndex(p => new { p.CreatedAt, p.Id }); // admin list, newest first (read backwards)
         // Trigram index: fast "contains" search on the normalized name (Workflow.md §10).
         product.HasIndex(p => p.NameNormalized).HasMethod("gin").HasOperators("gin_trgm_ops");
 

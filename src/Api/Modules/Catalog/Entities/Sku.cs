@@ -23,4 +23,7 @@ public sealed class Sku
     public DateTimeOffset CreatedAt { get; init; }
 
     public DateTimeOffset UpdatedAt { get; set; }
+
+    /// <summary>The stored form of a SKU code: trimmed and upper case, so codes differing only in case clash.</summary>
+    public static string NormalizeCode(string skuCode) => skuCode.Trim().ToUpperInvariant();
 }

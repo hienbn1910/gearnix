@@ -20,14 +20,25 @@ public static class CatalogJsonRules
 
     public static bool AreValidSpecs(Dictionary<string, JsonElement>? specs) =>
         specs is null
-        || (specs.Count <= MaxSpecs && specs.All(spec => IsValidKey(spec.Key) && IsValidSpecValue(spec.Value)));
+        || (specs.Count <= MaxSpecs
+            && KeysStayDistinct(specs.Keys)
+            && specs.All(spec => IsValidKey(spec.Key) && IsValidSpecValue(spec.Value)));
 
     public static bool AreValidAttributes(Dictionary<string, string>? attributes) =>
         attributes is null
         || (attributes.Count <= MaxAttributes
+            && KeysStayDistinct(attributes.Keys)
             && attributes.All(attribute => IsValidKey(attribute.Key) && IsValidString(attribute.Value)));
 
-    private static bool IsValidKey(string key) => !string.IsNullOrWhiteSpace(key) && key.Length <= KeyMaxLength;
+    // Lengths are checked after trimming, the form that is stored.
+    private static bool IsValidKey(string key) => !string.IsNullOrWhiteSpace(key) && key.Trim().Length <= KeyMaxLength;
+
+    /// <summary>Keys are trimmed before saving, so " cpu" and "cpu" would collide.</summary>
+    private static bool KeysStayDistinct(IEnumerable<string> keys)
+    {
+        var trimmed = keys.Select(key => key.Trim()).ToList();
+        return trimmed.Distinct(StringComparer.Ordinal).Count() == trimmed.Count;
+    }
 
     // Objects, arrays and null are rejected: specs are shown as a simple two-column table.
     private static bool IsValidSpecValue(JsonElement value) => value.ValueKind switch
@@ -37,5 +48,5 @@ public static class CatalogJsonRules
         _ => false,
     };
 
-    private static bool IsValidString(string? value) => value is not null && value.Length <= StringValueMaxLength;
+    private static bool IsValidString(string? value) => value is not null && value.Trim().Length <= StringValueMaxLength;
 }

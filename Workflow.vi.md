@@ -335,7 +335,7 @@ Hạn thanh toán lưu ở đơn hàng (`orders.ExpiresAt`), không lưu ở res
 | Bảng | Index / ràng buộc | Dùng cho |
 |---|---|---|
 | categories | unique `Slug`; `(ParentId)` | Cây danh mục |
-| products | unique `Slug`; `(CategoryId)`; `(MinPrice)`; GIN trigram trên `NameNormalized` | Danh sách catalog, tìm kiếm |
+| products | unique `Slug`; `(CategoryId)`; `(MinPrice)`; `(CreatedAt, Id)`; GIN trigram trên `NameNormalized` | Danh sách catalog, danh sách admin (mới nhất trước), tìm kiếm |
 | skus | unique `SkuCode`; `(ProductId)` | Chi tiết sản phẩm, đặt hàng |
 | stock_items | unique `(SkuId, WarehouseId)`; `(WarehouseId)` | Giữ hàng, tổng quan tồn kho |
 | stock_movements | `(SkuId, WarehouseId, CreatedAt, Id)` | Trang sổ biến động (phân trang keyset) |
@@ -1081,7 +1081,7 @@ Các ADR cần viết (chậm nhất là khi xong task liên quan):
 | 2026-11-26 | Duyệt Microsoft.AspNetCore.Mvc.Testing cho integration test (§4); ghi rõ đường dẫn đầy đủ `/api/health/...` của các endpoint health (§9, §11.3, §11.4, §11.6) | Chủ dự án |
 | 2026-11-26 | Mã lỗi chung (gồm các mã dự phòng `conflict`, `bad_request`, `service_unavailable`), câu báo lỗi tiếng Anh do frontend dịch, enum dạng chuỗi, đường dẫn tài liệu API (§9) | Chủ dự án |
 | 2026-11-26 | Identity: mã lỗi `email_taken`, `invalid_credentials`, `csrf_header_missing` (§9); bắt đăng nhập mặc định cho mọi controller thay vì fallback policy, để route không tồn tại vẫn trả `404`; Data Protection nạp khóa từ database lúc khởi động (§11.3) (#14) | Chủ dự án |
-| 2026-11-27 | Catalog: `MinPrice` cho phép `null`, thêm `CreatedAt`/`UpdatedAt` cho các bảng catalog (§6.1); index cho categories (§6.6); mã lỗi `sku_code_taken`, `slug_conflict`, `category_not_found`, `invalid_category_parent` (§9) (#17) | Chủ dự án |
+| 2026-11-27 | Catalog: `MinPrice` cho phép `null`, thêm `CreatedAt`/`UpdatedAt` cho các bảng catalog (§6.1); index cho categories và products `(CreatedAt, Id)` (§6.6); mã lỗi `sku_code_taken`, `slug_conflict`, `category_not_found`, `invalid_category_parent` (§9) (#17) | Chủ dự án |
 
 ---
 

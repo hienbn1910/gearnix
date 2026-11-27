@@ -61,6 +61,27 @@ public sealed class AdminProductsTests(PostgresFixture postgres)
     }
 
     [Fact]
+    public async Task Create_SpecKeysAndValuesWithSpaces_StoredTrimmed()
+    {
+        await using var factory = new GearnixApiFactory(postgres.ConnectionString);
+        using var admin = factory.CreateApiClientAs(Guid.CreateVersion7(), "Admin");
+        var category = await CreateCategoryAsync(admin);
+
+        var response = await admin.PostAsJsonAsync("/api/admin/products", new
+        {
+            categoryId = category.Id,
+            name = UniqueName("Laptop"),
+            brand = "Kivo",
+            specs = new Dictionary<string, object> { [" cpu "] = "  N2  ", ["ramGb"] = 16 },
+        }, Token);
+        var body = await response.Content.ReadFromJsonAsync<ProductBody>(Token);
+
+        Assert.NotNull(body);
+        Assert.Equal("N2", body.Specs["cpu"].GetString());
+        Assert.Equal(16, body.Specs["ramGb"].GetInt32());
+    }
+
+    [Fact]
     public async Task Create_SubCategory_Returns201()
     {
         await using var factory = new GearnixApiFactory(postgres.ConnectionString);

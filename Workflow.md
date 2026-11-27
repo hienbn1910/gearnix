@@ -336,7 +336,7 @@ The payment deadline is stored on the order (`orders.ExpiresAt`), not on the res
 | Table | Index / constraint | Used by |
 |---|---|---|
 | categories | unique `Slug`; `(ParentId)` | Category tree |
-| products | unique `Slug`; `(CategoryId)`; `(MinPrice)`; GIN trigram on `NameNormalized` | Catalog list, search |
+| products | unique `Slug`; `(CategoryId)`; `(MinPrice)`; `(CreatedAt, Id)`; GIN trigram on `NameNormalized` | Catalog list, admin list (newest first), search |
 | skus | unique `SkuCode`; `(ProductId)` | Product detail, checkout |
 | stock_items | unique `(SkuId, WarehouseId)`; `(WarehouseId)` | Reservation, stock overview |
 | stock_movements | `(SkuId, WarehouseId, CreatedAt, Id)` | Ledger page (keyset pagination) |
@@ -1080,7 +1080,7 @@ ADRs to write (no later than when the related task is done):
 | 2026-11-26 | Microsoft.AspNetCore.Mvc.Testing approved for integration tests (§4); health endpoints documented with their full `/api/health/...` paths (§9, §11.3, §11.4, §11.6) | Project owner |
 | 2026-11-26 | Generic error codes (incl. fallbacks `conflict`, `bad_request`, `service_unavailable`), English error text translated by the frontend, enums as strings, API documentation paths (§9) | Project owner |
 | 2026-11-26 | Identity: error codes `email_taken`, `invalid_credentials`, `csrf_header_missing` (§9); secure-by-default authorization on controllers instead of a fallback policy, so unknown routes stay `404`; Data Protection loads its keys from the database at startup (§11.3) (#14) | Project owner |
-| 2026-11-27 | Catalog: `MinPrice` nullable, `CreatedAt`/`UpdatedAt` on catalog tables (§6.1); category indexes (§6.6); error codes `sku_code_taken`, `slug_conflict`, `category_not_found`, `invalid_category_parent` (§9) (#17) | Project owner |
+| 2026-11-27 | Catalog: `MinPrice` nullable, `CreatedAt`/`UpdatedAt` on catalog tables (§6.1); category indexes and products `(CreatedAt, Id)` (§6.6); error codes `sku_code_taken`, `slug_conflict`, `category_not_found`, `invalid_category_parent` (§9) (#17) | Project owner |
 
 ---
 

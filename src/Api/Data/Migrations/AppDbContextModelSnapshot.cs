@@ -146,6 +146,9 @@ namespace Gearnix.Api.Data.Migrations
                         .IsUnique()
                         .HasDatabaseName("ix_products_slug");
 
+                    b.HasIndex("CreatedAt", "Id")
+                        .HasDatabaseName("ix_products_created_at_id");
+
                     b.ToTable("products", (string)null);
                 });
 

@@ -8,8 +8,6 @@ using Gearnix.Api.Modules.Catalog.Entities;
 
 using Microsoft.EntityFrameworkCore;
 
-using Npgsql;
-
 namespace Gearnix.Api.Modules.Catalog;
 
 /// <summary>Admin management of products and their SKUs (Workflow.md §6.1, §9).</summary>
@@ -61,7 +59,8 @@ public sealed class ProductService(
         {
             await products.SaveChangesAsync(cancellationToken);
         }
-        catch (DbUpdateException exception) when (IsUniqueViolation(exception, ProductConfiguration.SlugUniqueIndex))
+        catch (DbUpdateException exception)
+            when (DatabaseFailures.IsUniqueViolation(exception, ProductConfiguration.SlugUniqueIndex))
         {
             // Another request with the same name took this slug between our check and our insert.
             products.ClearTracked();
@@ -108,7 +107,7 @@ public sealed class ProductService(
         {
             Id = Guid.CreateVersion7(),
             ProductId = productId,
-            SkuCode = NormalizeSkuCode(request.SkuCode),
+            SkuCode = Sku.NormalizeCode(request.SkuCode),
             VariantName = request.VariantName.Trim(),
             Price = request.Price,
             Attributes = SerializeAttributes(request.Attributes),
@@ -133,7 +132,7 @@ public sealed class ProductService(
             var sku = await products.FindSkuAsync(productId, skuId, cancellationToken);
             if (sku is not null)
             {
-                sku.SkuCode = NormalizeSkuCode(request.SkuCode);
+                sku.SkuCode = Sku.NormalizeCode(request.SkuCode);
                 sku.VariantName = request.VariantName.Trim();
                 sku.Price = request.Price;
                 sku.Attributes = SerializeAttributes(request.Attributes);
@@ -170,7 +169,8 @@ public sealed class ProductService(
         {
             await products.SaveChangesAsync(cancellationToken);
         }
-        catch (DbUpdateException exception) when (IsUniqueViolation(exception, SkuConfiguration.SkuCodeUniqueIndex))
+        catch (DbUpdateException exception)
+            when (DatabaseFailures.IsUniqueViolation(exception, SkuConfiguration.SkuCodeUniqueIndex))
         {
             // The unique index is the real guard: it also catches two Admins adding the same code at once.
             // Roll back before anything else, and forget the failed change (Rule.md §3).
@@ -184,17 +184,16 @@ public sealed class ProductService(
         return ProductRepository.ToResponse(sku);
     }
 
-    private static string NormalizeSkuCode(string skuCode) => skuCode.Trim().ToUpperInvariant();
-
+    // Keys and string values are trimmed like every other text field; the validator has already checked that
+    // trimming leaves no two keys equal.
     private static string SerializeAttributes(Dictionary<string, string>? attributes) =>
-        JsonSerializer.Serialize(attributes ?? []);
+        JsonSerializer.Serialize((attributes ?? []).ToDictionary(a => a.Key.Trim(), a => a.Value.Trim()));
 
     private static string SerializeSpecs(Dictionary<string, JsonElement>? specs) =>
-        JsonSerializer.Serialize(specs ?? []);
+        JsonSerializer.Serialize((specs ?? []).ToDictionary(s => s.Key.Trim(), s => TrimString(s.Value)));
 
-    private static bool IsUniqueViolation(DbUpdateException exception, string indexName) =>
-        exception.InnerException is PostgresException
-        {
-            SqlState: PostgresErrorCodes.UniqueViolation,
-        } postgres && postgres.ConstraintName == indexName;
+    private static JsonElement TrimString(JsonElement value) =>
+        value.ValueKind == JsonValueKind.String
+            ? JsonSerializer.SerializeToElement(value.GetString()!.Trim()) // a String element never holds null
+            : value;
 }
