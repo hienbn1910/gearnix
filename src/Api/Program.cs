@@ -8,6 +8,7 @@ using Gearnix.Api.Common.Security;
 using Gearnix.Api.Common.Validation;
 using Gearnix.Api.Data;
 using Gearnix.Api.Data.Seeding;
+using Gearnix.Api.Modules.Catalog;
 using Gearnix.Api.Modules.Identity;
 
 using Microsoft.AspNetCore.Mvc;
@@ -56,6 +57,7 @@ builder.Services.AddDbContext<AppDbContext>((services, options) =>
 
 builder.Services.AddIdentityModule();
 builder.Services.AddGearnixAuthorization();
+builder.Services.AddCatalogModule();
 
 builder.Services.AddHealthChecks()
     .AddCheck<DatabaseHealthCheck>("database", tags: ["ready"], timeout: TimeSpan.FromSeconds(3));

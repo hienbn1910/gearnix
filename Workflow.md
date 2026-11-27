@@ -186,7 +186,7 @@ Conventions for every table (columns implied by these conventions are not repeat
 | Name | text | e.g. "Điện thoại" |
 | Slug | text | Unique, e.g. `dien-thoai` |
 | ParentId | uuid? | FK → categories; at most 2 levels |
-| SortOrder | int | |
+| SortOrder | int | 0–1000; categories are listed by `SortOrder`, then `Name` |
 
 **products**
 
@@ -200,7 +200,7 @@ Conventions for every table (columns implied by these conventions are not repeat
 | Brand | text | Fictional brand |
 | Description | text | |
 | Specs | jsonb | Category-specific specs, e.g. `{"cpu": "...", "ramGb": 16}` |
-| MinPrice | numeric(18,2) | Lowest price among active SKUs; updated in the same transaction as any SKU change; used for price filtering and sorting |
+| MinPrice | numeric(18,2)? | Lowest price among active SKUs, `null` when there is none; updated in the same transaction as any SKU change, after locking the product row; used for price filtering and sorting |
 | IsActive | bool | Inactive products are hidden from the storefront |
 
 **skus** (sellable variants)
@@ -214,6 +214,9 @@ Conventions for every table (columns implied by these conventions are not repeat
 | Price | numeric(18,2) | Current price; must be > 0 |
 | Attributes | jsonb | e.g. `{"storage": "128GB", "color": "Đen"}` |
 | IsActive | bool | |
+
+All three catalog tables also have `CreatedAt` and `UpdatedAt` (`timestamptz`, UTC, from `TimeProvider`).
+Catalog items are never deleted; they are deactivated with `IsActive`.
 
 ### 6.2 Inventory
 
@@ -332,7 +335,8 @@ The payment deadline is stored on the order (`orders.ExpiresAt`), not on the res
 
 | Table | Index / constraint | Used by |
 |---|---|---|
-| products | unique `Slug`; `(CategoryId)`; `(MinPrice)`; GIN trigram on `NameNormalized` | Catalog list, search |
+| categories | unique `Slug`; `(ParentId)` | Category tree |
+| products | unique `Slug`; `(CategoryId)`; `(MinPrice)`; `(CreatedAt, Id)`; GIN trigram on `NameNormalized` | Catalog list, admin list (newest first), search |
 | skus | unique `SkuCode`; `(ProductId)` | Product detail, checkout |
 | stock_items | unique `(SkuId, WarehouseId)`; `(WarehouseId)` | Reservation, stock overview |
 | stock_movements | `(SkuId, WarehouseId, CreatedAt, Id)` | Ledger page (keyset pagination) |
@@ -624,7 +628,10 @@ Generic error codes: `validation_failed` (400, with an `errors` map of camelCase
 (503, temporary database failure), `service_unavailable` (any other 503), `bad_request` (any other 4xx, e.g. 415).
 Business error codes: `out_of_stock`, `invalid_status`, `too_many_pending_orders`, `idempotency_key_reused`,
 `adjustment_below_reserved` (§7.10), `email_taken` (409, register), `invalid_credentials` (401, login: unknown email,
-wrong password and locked account all look the same), `csrf_header_missing` (403, §11.5).
+wrong password and locked account all look the same), `csrf_header_missing` (403, §11.5),
+`sku_code_taken` (409), `slug_conflict` (409, two items with the same name created at the same moment),
+`category_not_found` (400, the category in the request body does not exist), `invalid_category_parent` (400, breaks the
+two-level category rule).
 
 **Response shapes**
 
@@ -923,11 +930,11 @@ Every task follows the full process in `Rule.md` §1.
   Also remove the CI allowance `--ignore-exit-code 8` once the first test exists (from W1-02, #8).
 - [x] **W1-04** (#12) Error handling and API docs: ProblemDetails with `code` and `traceId`, FluentValidation wiring,
   standard list response types (§9), OpenAPI + Scalar.
-- [ ] **W1-05** (#14) Identity: register, login, logout, me; cookie settings (§11.5); `401`/`403` instead of redirects;
+- [x] **W1-05** (#14) Identity: register, login, logout, me; cookie settings (§11.5); `401`/`403` instead of redirects;
   CSRF header check; lockout; Data Protection keys in the database; the `seed` command with roles and the
   WarehouseStaff/Admin accounts (§13.4); authorization policies; test authentication scheme for integration tests.
   *Done when:* tests prove the `401`, `403`, missing-CSRF and lockout cases.
-- [ ] **W1-06** Catalog administration: categories, products, SKUs (DTOs, validators, slug generation, `MinPrice` maintenance).
+- [ ] **W1-06** (#17) Catalog administration: categories, products, SKUs (DTOs, validators, slug generation, `MinPrice` maintenance).
 - [ ] **W1-07** Public catalog: product list (filters, pagination) and product detail.
 - [ ] **W1-08** Seed data with Bogus (§13.4): categories, products, SKUs and demo customers. **No stock yet** (added in W2-03).
 - [ ] **W1-09** Frontend setup: both Vite apps, routing, Tailwind, TanStack Query, API type generation,
@@ -1073,6 +1080,7 @@ ADRs to write (no later than when the related task is done):
 | 2026-11-26 | Microsoft.AspNetCore.Mvc.Testing approved for integration tests (§4); health endpoints documented with their full `/api/health/...` paths (§9, §11.3, §11.4, §11.6) | Project owner |
 | 2026-11-26 | Generic error codes (incl. fallbacks `conflict`, `bad_request`, `service_unavailable`), English error text translated by the frontend, enums as strings, API documentation paths (§9) | Project owner |
 | 2026-11-26 | Identity: error codes `email_taken`, `invalid_credentials`, `csrf_header_missing` (§9); secure-by-default authorization on controllers instead of a fallback policy, so unknown routes stay `404`; Data Protection loads its keys from the database at startup (§11.3) (#14) | Project owner |
+| 2026-11-27 | Catalog: `MinPrice` nullable, `CreatedAt`/`UpdatedAt` on catalog tables (§6.1); category indexes and products `(CreatedAt, Id)` (§6.6); error codes `sku_code_taken`, `slug_conflict`, `category_not_found`, `invalid_category_parent` (§9) (#17) | Project owner |
 
 ---
 

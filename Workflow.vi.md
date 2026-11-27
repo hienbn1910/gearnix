@@ -185,7 +185,7 @@ Quy ước cho mọi bảng (các cột suy ra từ quy ước này không đư�
 | Name | text | Ví dụ "Điện thoại" |
 | Slug | text | Duy nhất, ví dụ `dien-thoai` |
 | ParentId | uuid? | FK → categories; tối đa 2 cấp |
-| SortOrder | int | |
+| SortOrder | int | 0–1000; danh mục được sắp theo `SortOrder`, rồi `Name` |
 
 **products**
 
@@ -199,7 +199,7 @@ Quy ước cho mọi bảng (các cột suy ra từ quy ước này không đư�
 | Brand | text | Thương hiệu hư cấu |
 | Description | text | |
 | Specs | jsonb | Thông số theo danh mục, ví dụ `{"cpu": "...", "ramGb": 16}` |
-| MinPrice | numeric(18,2) | Giá thấp nhất trong các SKU đang hoạt động; cập nhật trong cùng transaction với mọi thay đổi SKU; dùng để lọc và sắp xếp theo giá |
+| MinPrice | numeric(18,2)? | Giá thấp nhất trong các SKU đang hoạt động, `null` khi không có SKU nào; cập nhật trong cùng transaction với mọi thay đổi SKU, sau khi khóa dòng product; dùng để lọc và sắp xếp theo giá |
 | IsActive | bool | Sản phẩm không hoạt động bị ẩn khỏi website |
 
 **skus** (biến thể bán được)
@@ -213,6 +213,9 @@ Quy ước cho mọi bảng (các cột suy ra từ quy ước này không đư�
 | Price | numeric(18,2) | Giá hiện tại; phải > 0 |
 | Attributes | jsonb | Ví dụ `{"storage": "128GB", "color": "Đen"}` |
 | IsActive | bool | |
+
+Cả ba bảng catalog đều có thêm `CreatedAt` và `UpdatedAt` (`timestamptz`, UTC, lấy từ `TimeProvider`).
+Mục catalog không bao giờ bị xóa; chỉ bị tắt bằng `IsActive`.
 
 ### 6.2 Inventory
 
@@ -331,7 +334,8 @@ Hạn thanh toán lưu ở đơn hàng (`orders.ExpiresAt`), không lưu ở res
 
 | Bảng | Index / ràng buộc | Dùng cho |
 |---|---|---|
-| products | unique `Slug`; `(CategoryId)`; `(MinPrice)`; GIN trigram trên `NameNormalized` | Danh sách catalog, tìm kiếm |
+| categories | unique `Slug`; `(ParentId)` | Cây danh mục |
+| products | unique `Slug`; `(CategoryId)`; `(MinPrice)`; `(CreatedAt, Id)`; GIN trigram trên `NameNormalized` | Danh sách catalog, danh sách admin (mới nhất trước), tìm kiếm |
 | skus | unique `SkuCode`; `(ProductId)` | Chi tiết sản phẩm, đặt hàng |
 | stock_items | unique `(SkuId, WarehouseId)`; `(WarehouseId)` | Giữ hàng, tổng quan tồn kho |
 | stock_movements | `(SkuId, WarehouseId, CreatedAt, Id)` | Trang sổ biến động (phân trang keyset) |
@@ -623,7 +627,10 @@ Các mã lỗi chung: `validation_failed` (400, kèm `errors` theo tên field d�
 (503, lỗi database tạm thời), `service_unavailable` (503 khác), `bad_request` (mọi 4xx khác, ví dụ 415).
 Các mã lỗi nghiệp vụ: `out_of_stock`, `invalid_status`, `too_many_pending_orders`, `idempotency_key_reused`,
 `adjustment_below_reserved` (§7.10), `email_taken` (409, đăng ký), `invalid_credentials` (401, đăng nhập: email không
-tồn tại, sai mật khẩu và tài khoản bị khóa trả lời giống hệt nhau), `csrf_header_missing` (403, §11.5).
+tồn tại, sai mật khẩu và tài khoản bị khóa trả lời giống hệt nhau), `csrf_header_missing` (403, §11.5),
+`sku_code_taken` (409), `slug_conflict` (409, hai mục cùng tên được tạo cùng lúc),
+`category_not_found` (400, danh mục trong body không tồn tại), `invalid_category_parent` (400, vi phạm quy tắc danh mục
+tối đa hai cấp).
 
 **Định dạng phản hồi**
 
@@ -923,11 +930,11 @@ Mọi task đi theo quy trình đầy đủ ở `Rule.md` §1.
   Đồng thời gỡ tùy chọn CI `--ignore-exit-code 8` khi đã có test đầu tiên (từ W1-02, #8).
 - [x] **W1-04** (#12) Xử lý lỗi và tài liệu API: ProblemDetails có `code` và `traceId`, nối FluentValidation,
   kiểu phản hồi danh sách chuẩn (§9), OpenAPI + Scalar.
-- [ ] **W1-05** (#14) Identity: đăng ký, đăng nhập, đăng xuất, me; cấu hình cookie (§11.5); `401`/`403` thay vì chuyển hướng;
+- [x] **W1-05** (#14) Identity: đăng ký, đăng nhập, đăng xuất, me; cấu hình cookie (§11.5); `401`/`403` thay vì chuyển hướng;
   kiểm tra header CSRF; khóa tài khoản; khóa Data Protection trong database; lệnh `seed` cùng các vai trò và tài khoản
   WarehouseStaff/Admin (§13.4); policy phân quyền; cơ chế xác thực dành cho integration test.
   *Xong khi:* có test chứng minh các trường hợp `401`, `403`, thiếu CSRF và khóa tài khoản.
-- [ ] **W1-06** Quản trị Catalog: danh mục, sản phẩm, SKU (DTO, validator, sinh slug, cập nhật `MinPrice`).
+- [ ] **W1-06** (#17) Quản trị Catalog: danh mục, sản phẩm, SKU (DTO, validator, sinh slug, cập nhật `MinPrice`).
 - [ ] **W1-07** Catalog công khai: danh sách sản phẩm (lọc, phân trang) và chi tiết sản phẩm.
 - [ ] **W1-08** Dữ liệu mẫu bằng Bogus (§13.4): danh mục, sản phẩm, SKU và khách demo. **Chưa có tồn kho** (thêm ở W2-03).
 - [ ] **W1-09** Dựng frontend: hai app Vite, routing, Tailwind, TanStack Query, sinh kiểu API,
@@ -1074,6 +1081,7 @@ Các ADR cần viết (chậm nhất là khi xong task liên quan):
 | 2026-11-26 | Duyệt Microsoft.AspNetCore.Mvc.Testing cho integration test (§4); ghi rõ đường dẫn đầy đủ `/api/health/...` của các endpoint health (§9, §11.3, §11.4, §11.6) | Chủ dự án |
 | 2026-11-26 | Mã lỗi chung (gồm các mã dự phòng `conflict`, `bad_request`, `service_unavailable`), câu báo lỗi tiếng Anh do frontend dịch, enum dạng chuỗi, đường dẫn tài liệu API (§9) | Chủ dự án |
 | 2026-11-26 | Identity: mã lỗi `email_taken`, `invalid_credentials`, `csrf_header_missing` (§9); bắt đăng nhập mặc định cho mọi controller thay vì fallback policy, để route không tồn tại vẫn trả `404`; Data Protection nạp khóa từ database lúc khởi động (§11.3) (#14) | Chủ dự án |
+| 2026-11-27 | Catalog: `MinPrice` cho phép `null`, thêm `CreatedAt`/`UpdatedAt` cho các bảng catalog (§6.1); index cho categories và products `(CreatedAt, Id)` (§6.6); mã lỗi `sku_code_taken`, `slug_conflict`, `category_not_found`, `invalid_category_parent` (§9) (#17) | Chủ dự án |
 
 ---
 

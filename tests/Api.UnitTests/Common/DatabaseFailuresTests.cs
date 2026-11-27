@@ -51,6 +51,33 @@ public sealed class DatabaseFailuresTests
         Assert.False(DatabaseFailures.IsUnavailable(new InvalidOperationException("bug")));
     }
 
+    [Fact]
+    public void IsUniqueViolation_SameIndex_ReturnsTrue()
+    {
+        var exception = new InvalidOperationException("save failed", UniqueViolation("ix_skus_sku_code"));
+
+        Assert.True(DatabaseFailures.IsUniqueViolation(exception, "ix_skus_sku_code"));
+    }
+
+    [Fact]
+    public void IsUniqueViolation_OtherIndex_ReturnsFalse()
+    {
+        var exception = new InvalidOperationException("save failed", UniqueViolation("ix_products_slug"));
+
+        Assert.False(DatabaseFailures.IsUniqueViolation(exception, "ix_skus_sku_code"));
+    }
+
+    [Fact]
+    public void IsUniqueViolation_OtherSqlState_ReturnsFalse()
+    {
+        var exception = new InvalidOperationException("save failed", Postgres("40P01"));
+
+        Assert.False(DatabaseFailures.IsUniqueViolation(exception, "ix_skus_sku_code"));
+    }
+
+    private static PostgresException UniqueViolation(string constraintName) =>
+        new("message", "ERROR", "ERROR", PostgresErrorCodes.UniqueViolation, constraintName: constraintName);
+
     private static PostgresException Postgres(string sqlState) =>
         new("message", "ERROR", "ERROR", sqlState);
 }

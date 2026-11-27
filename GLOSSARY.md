@@ -11,6 +11,11 @@ Updated during `/grill-with-docs` sessions. Business rules behind each term: `Wo
 | **SKU** | A sellable variant of a product (e.g. "Nova X, 128GB, Black"). Prices and stock belong to SKUs | variant (in code) |
 | **Category** | A group of products, at most 2 levels deep | |
 | **Stock status** | What customers see: `InStock` (> 5 available), `LowStock` (1–5), `OutOfStock` (0) | stock level |
+| **Slug** | The unique, URL-friendly name of a category or product (e.g. `dien-thoai-nova-x-5g`). Derived from the name once and never changed, so links keep working | URL name, permalink |
+| **Active / Inactive** | An inactive product or SKU is hidden from the storefront and cannot be ordered. Catalog items are deactivated, never deleted | deleted, archived |
+| **Specs** | A product's technical details (e.g. CPU, RAM), shown on the product page | properties |
+| **Attributes** | What distinguishes one SKU of a product from another (e.g. storage, color) | options |
+| **Min price** | The lowest price among a product's active SKUs; empty when it has none. Used to filter and sort products by price | starting price |
 
 ## Inventory
 
