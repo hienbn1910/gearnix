@@ -23,6 +23,9 @@ public sealed class StorefrontCategoriesTests(PostgresFixture postgres)
         var childB = await CreateCategoryAsync(admin, UniqueName("B"), later.Id, sortOrder: 1);
         var childA = await CreateCategoryAsync(admin, UniqueName("A"), later.Id, sortOrder: 1);
         var childFirst = await CreateCategoryAsync(admin, UniqueName("C"), later.Id, sortOrder: 0);
+        // A category whose only product is hidden is still listed: the tree does not depend on products.
+        var hidden = await CreateProductAsync(admin, earlier.Id, isActive: false);
+        await CreateSkuAsync(admin, hidden.Id, 1_000_000m);
 
         var response = await visitor.GetAsync("/api/categories", Token);
         var tree = await response.Content.ReadFromJsonAsync<CategoryTreeBody>(Token);

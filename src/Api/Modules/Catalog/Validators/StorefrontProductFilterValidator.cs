@@ -8,8 +8,11 @@ public sealed class StorefrontProductFilterValidator : AbstractValidator<Storefr
 {
     public StorefrontProductFilterValidator()
     {
-        // No brand is longer than an Admin may type, so a longer one can only be a mistake.
-        RuleFor(filter => filter.Brand).MaximumLength(ProductRequestValidator.BrandMaxLength);
+        // No brand is longer than an Admin may type, so a longer one can only be a mistake. Checked after trimming,
+        // the same way the filter compares it.
+        RuleFor(filter => filter.Brand == null ? null : filter.Brand.Trim())
+            .MaximumLength(ProductRequestValidator.BrandMaxLength)
+            .OverridePropertyName(nameof(StorefrontProductFilter.Brand));
 
         // The same limits as a SKU price, except 0 is allowed as a lower bound: whole VND up to 1 billion.
         RuleFor(filter => filter.MinPrice!.Value).Must(BeAPriceBound).WithMessage(PriceBoundMessage)
@@ -19,8 +22,9 @@ public sealed class StorefrontProductFilterValidator : AbstractValidator<Storefr
             .OverridePropertyName(nameof(StorefrontProductFilter.MaxPrice))
             .When(filter => filter.MaxPrice is not null);
 
-        // Model binding turns any number into the enum, so "sort=99" arrives as an undefined value.
-        RuleFor(filter => filter.Sort).IsInEnum();
+        RuleFor(filter => filter.Sort!)
+            .Must(ProductSortNames.IsKnown).WithMessage("Sort must be one of: newest, priceAsc, priceDesc.")
+            .When(filter => filter.Sort is not null);
 
         RuleFor(filter => filter.MinPrice)
             .LessThanOrEqualTo(filter => filter.MaxPrice).WithMessage("Minimum price must not be above the maximum price.")

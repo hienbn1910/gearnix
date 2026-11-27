@@ -15,5 +15,6 @@ public sealed class StorefrontProductFilter
     /// <summary>Highest accepted min price, inclusive.</summary>
     public decimal? MaxPrice { get; init; }
 
-    public ProductSort Sort { get; init; } = ProductSort.Newest;
+    /// <summary><c>newest</c> (default), <c>priceAsc</c> or <c>priceDesc</c>; see <see cref="ProductSortNames"/>.</summary>
+    public string? Sort { get; init; }
 }

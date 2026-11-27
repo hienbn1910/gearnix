@@ -32,7 +32,8 @@ public sealed class ProductService(
     public async Task<PagedResponse<StorefrontProductListItem>> ListVisibleAsync(
         PageRequest page, StorefrontProductFilter filter, CancellationToken cancellationToken)
     {
-        var (items, totalCount) = await products.ListVisiblePageAsync(filter, page.Page, page.PageSize, cancellationToken);
+        var (items, totalCount) = await products.ListVisiblePageAsync(
+            filter, ProductSortNames.Parse(filter.Sort), page.Page, page.PageSize, cancellationToken);
         return new PagedResponse<StorefrontProductListItem>(items, page.Page, page.PageSize, totalCount);
     }
 

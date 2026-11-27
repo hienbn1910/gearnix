@@ -56,7 +56,7 @@ public sealed class ProductRepository(AppDbContext dbContext)
     private static readonly Expression<Func<Product, bool>> IsVisible = p => p.IsActive && p.MinPrice != null;
 
     public async Task<(IReadOnlyList<StorefrontProductListItem> Items, int TotalCount)> ListVisiblePageAsync(
-        StorefrontProductFilter filter, int page, int pageSize, CancellationToken cancellationToken)
+        StorefrontProductFilter filter, ProductSort sort, int page, int pageSize, CancellationToken cancellationToken)
     {
         var query = dbContext.Products.AsNoTracking().Where(IsVisible);
         if (filter.CategoryId is { } categoryId)
@@ -88,7 +88,7 @@ public sealed class ProductRepository(AppDbContext dbContext)
         }
 
         var totalCount = await query.CountAsync(cancellationToken);
-        var items = await Sort(query, filter.Sort)
+        var items = await Sort(query, sort)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Select(p => new StorefrontProductListItem(p.Id, p.Slug, p.Name, p.Brand, p.MinPrice!.Value, p.CategoryId))
@@ -109,6 +109,7 @@ public sealed class ProductRepository(AppDbContext dbContext)
                 Skus = dbContext.Skus
                     .Where(s => s.ProductId == p.Id && s.IsActive)
                     .OrderBy(s => s.Price).ThenBy(s => s.Id)
+                    .Select(s => new { s.Id, s.SkuCode, s.VariantName, s.Price, s.Attributes })
                     .ToList(),
             })
             .SingleOrDefaultAsync(cancellationToken);
@@ -119,13 +120,9 @@ public sealed class ProductRepository(AppDbContext dbContext)
 
         var p = found.Product;
         return new StorefrontProduct(
-            p.Id, p.Slug, p.Name, p.Brand, p.Description,
-            JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(p.Specs) ?? [],
-            p.MinPrice!.Value,
-            found.Category,
-            found.Skus.Select(s => new StorefrontSku(
-                s.Id, s.SkuCode, s.VariantName, s.Price,
-                JsonSerializer.Deserialize<Dictionary<string, string>>(s.Attributes) ?? [])).ToList());
+            p.Id, p.Slug, p.Name, p.Brand, p.Description, ReadSpecs(p.Specs), p.MinPrice!.Value, found.Category,
+            found.Skus.Select(s => new StorefrontSku(s.Id, s.SkuCode, s.VariantName, s.Price, ReadAttributes(s.Attributes)))
+                .ToList());
     }
 
     /// <summary>Id is the last key of every order, so equal prices or times never swap places between pages.</summary>
@@ -205,14 +202,17 @@ public sealed class ProductRepository(AppDbContext dbContext)
     public void ClearTracked() => dbContext.ChangeTracker.Clear();
 
     public static ProductResponse ToResponse(Product p, IReadOnlyList<SkuResponse> skus) => new(
-        p.Id, p.CategoryId, p.Name, p.Slug, p.Brand, p.Description,
-        JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(p.Specs) ?? [],
-        p.MinPrice, p.IsActive, p.CreatedAt, p.UpdatedAt, skus);
+        p.Id, p.CategoryId, p.Name, p.Slug, p.Brand, p.Description, ReadSpecs(p.Specs), p.MinPrice, p.IsActive, p.CreatedAt, p.UpdatedAt, skus);
 
     public static SkuResponse ToResponse(Sku s) => new(
-        s.Id, s.ProductId, s.SkuCode, s.VariantName, s.Price,
-        JsonSerializer.Deserialize<Dictionary<string, string>>(s.Attributes) ?? [],
-        s.IsActive, s.CreatedAt, s.UpdatedAt);
+        s.Id, s.ProductId, s.SkuCode, s.VariantName, s.Price, ReadAttributes(s.Attributes), s.IsActive, s.CreatedAt, s.UpdatedAt);
+
+    /// <summary>The jsonb columns are stored as JSON text; the service only ever writes JSON objects to them.</summary>
+    private static Dictionary<string, JsonElement> ReadSpecs(string json) =>
+        JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(json) ?? [];
+
+    private static Dictionary<string, string> ReadAttributes(string json) =>
+        JsonSerializer.Deserialize<Dictionary<string, string>>(json) ?? [];
 
     private const string LikeEscape = @"\";
 

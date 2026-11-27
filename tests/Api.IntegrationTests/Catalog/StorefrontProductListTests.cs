@@ -206,6 +206,8 @@ public sealed class StorefrontProductListTests(PostgresFixture postgres)
     [InlineData("relevance")] // comes with search in W4-05
     [InlineData("cheapest")]
     [InlineData("99")]
+    [InlineData("1")] // a number is not one of the names, even if it matches an enum value
+    [InlineData("newest,priceAsc")]
     public async Task List_UnknownSort_Returns400KeyedBySort(string sort)
     {
         await using var factory = new GearnixApiFactory(postgres.ConnectionString);

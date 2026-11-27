@@ -51,12 +51,21 @@ public sealed class StorefrontProductFilterValidatorTests
     }
 
     [Theory]
-    [InlineData(ProductSort.Newest, true)]
-    [InlineData(ProductSort.PriceAsc, true)]
-    [InlineData(ProductSort.PriceDesc, true)]
-    [InlineData((ProductSort)99, false)]
-    public void Sort_OnlyDefinedValues(ProductSort sort, bool expectedValid)
+    [InlineData(null, true)]
+    [InlineData("newest", true)]
+    [InlineData("priceAsc", true)]
+    [InlineData("PRICEDESC", true)]
+    [InlineData("relevance", false)]
+    [InlineData("1", false)]
+    [InlineData("", false)]
+    public void Sort_OnlyTheNamedOrders(string? sort, bool expectedValid)
     {
         Assert.Equal(expectedValid, _validator.Validate(new StorefrontProductFilter { Sort = sort }).IsValid);
+    }
+
+    [Fact]
+    public void BrandLength_IsCheckedAfterTrimming()
+    {
+        Assert.True(_validator.Validate(new StorefrontProductFilter { Brand = $"  {new string('a', 100)}  " }).IsValid);
     }
 }
