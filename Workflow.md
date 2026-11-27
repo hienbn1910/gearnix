@@ -936,7 +936,7 @@ Every task follows the full process in `Rule.md` §1.
   WarehouseStaff/Admin accounts (§13.4); authorization policies; test authentication scheme for integration tests.
   *Done when:* tests prove the `401`, `403`, missing-CSRF and lockout cases.
 - [x] **W1-06** (#17) Catalog administration: categories, products, SKUs (DTOs, validators, slug generation, `MinPrice` maintenance).
-- [ ] **W1-07** (#22) Public catalog: category tree, product list (filters, sorts, pagination) and product detail;
+- [x] **W1-07** (#22) Public catalog: category tree, product list (filters, sorts, pagination) and product detail;
   visible products only. Text search `q` and the `relevance` sort come in W4-05, caching in W4-06.
 - [ ] **W1-08** Seed data with Bogus (§13.4): categories, products, SKUs and demo customers. **No stock yet** (added in W2-03).
 - [ ] **W1-09** Frontend setup: both Vite apps, routing, Tailwind, TanStack Query, API type generation,
