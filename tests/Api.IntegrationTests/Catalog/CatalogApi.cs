@@ -21,14 +21,14 @@ internal static class CatalogApi
     }
 
     public static async Task<ProductBody> CreateProductAsync(
-        HttpClient admin, Guid categoryId, string? name = null, bool isActive = true)
+        HttpClient admin, Guid categoryId, string? name = null, bool isActive = true, string brand = "Novatech")
     {
         var response = await admin.PostAsJsonAsync("/api/admin/products",
             new
             {
                 categoryId,
                 name = name ?? UniqueName("Sản phẩm"),
-                brand = "Novatech",
+                brand,
                 description = "Mô tả",
                 specs = new { cpu = "N1", ramGb = 8 },
                 isActive,
@@ -58,6 +58,21 @@ internal static class CatalogApi
     public static async Task<ProductBody> GetProductAsync(HttpClient admin, Guid productId) =>
         await admin.GetFromJsonAsync<ProductBody>($"/api/admin/products/{productId}", Token)
         ?? throw new InvalidOperationException("Empty product body.");
+
+    /// <summary>The response body as raw JSON, to check exactly which fields a public response exposes.</summary>
+    public static async Task<JsonElement> ReadJsonAsync(HttpResponseMessage response)
+    {
+        if (response.StatusCode != HttpStatusCode.OK)
+        {
+            throw new InvalidOperationException(
+                $"Expected 200, got {(int)response.StatusCode}: {await response.Content.ReadAsStringAsync(Token)}");
+        }
+
+        return await response.Content.ReadFromJsonAsync<JsonElement>(Token);
+    }
+
+    public static IEnumerable<string> PropertyNames(JsonElement json) =>
+        json.EnumerateObject().Select(property => property.Name);
 
     private static async Task<T> ReadCreatedAsync<T>(HttpResponseMessage response)
     {
@@ -104,3 +119,27 @@ internal sealed record SkuBody(
     DateTimeOffset UpdatedAt);
 
 internal sealed record PageBody<T>(List<T> Items, int Page, int PageSize, int TotalCount);
+
+internal sealed record CategoryTreeBody(List<CategoryTreeItemBody> Items);
+
+internal sealed record CategoryTreeItemBody(Guid Id, string Name, string Slug, List<CategoryTreeChildBody> Children);
+
+internal sealed record CategoryTreeChildBody(Guid Id, string Name, string Slug);
+
+internal sealed record StorefrontProductBody(Guid Id, string Slug, string Name, string Brand, decimal MinPrice, Guid CategoryId);
+
+internal sealed record StorefrontProductPageBody(
+    Guid Id,
+    string Slug,
+    string Name,
+    string Brand,
+    string Description,
+    Dictionary<string, JsonElement> Specs,
+    decimal MinPrice,
+    StorefrontCategoryBody Category,
+    List<StorefrontSkuBody> Skus);
+
+internal sealed record StorefrontCategoryBody(Guid Id, string Name, string Slug);
+
+internal sealed record StorefrontSkuBody(
+    Guid Id, string SkuCode, string VariantName, decimal Price, Dictionary<string, string> Attributes);

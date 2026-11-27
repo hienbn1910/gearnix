@@ -19,6 +19,7 @@ public sealed class PageRequestValidatorTests
     [Theory]
     [InlineData(1, 1)]
     [InlineData(5, 100)]
+    [InlineData(10_000, 100)]
     public void Validate_WithinBounds_IsValid(int page, int pageSize)
     {
         var result = _validator.Validate(new PageRequest { Page = page, PageSize = pageSize });
@@ -29,6 +30,8 @@ public sealed class PageRequestValidatorTests
     [Theory]
     [InlineData(0, 20, "Page")]
     [InlineData(-1, 20, "Page")]
+    [InlineData(10_001, 20, "Page")]
+    [InlineData(int.MaxValue, 20, "Page")] // (page - 1) * pageSize would overflow int
     [InlineData(1, 0, "PageSize")]
     [InlineData(1, 101, "PageSize")]
     public void Validate_OutOfBounds_FailsOnThatField(int page, int pageSize, string invalidField)

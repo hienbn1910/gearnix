@@ -10,7 +10,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Gearnix.Api.Modules.Catalog;
 
-/// <summary>Admin management of products and their SKUs (Workflow.md §6.1, §9).</summary>
+/// <summary>
+/// Products and their SKUs: Admin management, and the storefront's read-only views of visible products
+/// (Workflow.md §6.1, §9).
+/// </summary>
 public sealed class ProductService(
     ProductRepository products,
     CategoryRepository categories,
@@ -25,6 +28,18 @@ public sealed class ProductService(
             query, filter.CategoryId, filter.IsActive, page.Page, page.PageSize, cancellationToken);
         return new PagedResponse<ProductListItem>(items, page.Page, page.PageSize, totalCount);
     }
+
+    public async Task<PagedResponse<StorefrontProductListItem>> ListVisibleAsync(
+        PageRequest page, StorefrontProductFilter filter, CancellationToken cancellationToken)
+    {
+        var (items, totalCount) = await products.ListVisiblePageAsync(
+            filter, ProductSortNames.Parse(filter.Sort), page.Page, page.PageSize, cancellationToken);
+        return new PagedResponse<StorefrontProductListItem>(items, page.Page, page.PageSize, totalCount);
+    }
+
+    /// <summary>A product the storefront hides gets the same 404 as one that does not exist.</summary>
+    public async Task<Result<StorefrontProduct>> GetVisibleAsync(string slug, CancellationToken cancellationToken) =>
+        await products.GetVisibleBySlugAsync(slug, cancellationToken) is { } product ? product : CatalogErrors.NotFound;
 
     public async Task<Result<ProductResponse>> GetAsync(Guid id, CancellationToken cancellationToken) =>
         await products.GetResponseAsync(id, cancellationToken) is { } product ? product : CatalogErrors.NotFound;

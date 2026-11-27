@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using System.Text.Json;
 
 using Gearnix.Api.Data;
@@ -46,6 +47,91 @@ public sealed class ProductRepository(AppDbContext dbContext)
             .ToListAsync(cancellationToken);
         return (items, totalCount);
     }
+
+    /// <summary>
+    /// A visible product: active, with at least one active SKU. The min price is kept empty exactly when a product
+    /// has no active SKU, so it answers the second half without a subquery. The storefront list and product page
+    /// both use this one definition.
+    /// </summary>
+    private static readonly Expression<Func<Product, bool>> IsVisible = p => p.IsActive && p.MinPrice != null;
+
+    public async Task<(IReadOnlyList<StorefrontProductListItem> Items, int TotalCount)> ListVisiblePageAsync(
+        StorefrontProductFilter filter, ProductSort sort, int page, int pageSize, CancellationToken cancellationToken)
+    {
+        var query = dbContext.Products.AsNoTracking().Where(IsVisible);
+        if (filter.CategoryId is { } categoryId)
+        {
+            // The category itself and its sub-categories; categories are at most two levels deep, so one level of
+            // children is the whole subtree. Runs as a subquery in the same SQL statement.
+            var categoryIds = dbContext.Categories
+                .Where(c => c.Id == categoryId || c.ParentId == categoryId)
+                .Select(c => c.Id);
+            query = query.Where(p => categoryIds.Contains(p.CategoryId));
+        }
+
+        if (!string.IsNullOrWhiteSpace(filter.Brand))
+        {
+            // Brands are stored trimmed; lower() on both sides makes "kivo" match "Kivo".
+            var brand = filter.Brand.Trim().ToLowerInvariant();
+            query = query.Where(p => p.Brand.ToLower() == brand);
+        }
+
+        // A product is in the price range when its cheapest active SKU is (Workflow.md §10).
+        if (filter.MinPrice is { } minPrice)
+        {
+            query = query.Where(p => p.MinPrice >= minPrice);
+        }
+
+        if (filter.MaxPrice is { } maxPrice)
+        {
+            query = query.Where(p => p.MinPrice <= maxPrice);
+        }
+
+        var totalCount = await query.CountAsync(cancellationToken);
+        var items = await Sort(query, sort)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(p => new StorefrontProductListItem(p.Id, p.Slug, p.Name, p.Brand, p.MinPrice!.Value, p.CategoryId))
+            .ToListAsync(cancellationToken);
+        return (items, totalCount);
+    }
+
+    /// <summary>A visible product with its category and active SKUs (cheapest first), in one query.</summary>
+    public async Task<StorefrontProduct?> GetVisibleBySlugAsync(string slug, CancellationToken cancellationToken)
+    {
+        var found = await dbContext.Products.AsNoTracking()
+            .Where(IsVisible)
+            .Where(p => p.Slug == slug)
+            .Join(dbContext.Categories, p => p.CategoryId, c => c.Id, (p, c) => new
+            {
+                Product = p,
+                Category = new StorefrontCategory(c.Id, c.Name, c.Slug),
+                Skus = dbContext.Skus
+                    .Where(s => s.ProductId == p.Id && s.IsActive)
+                    .OrderBy(s => s.Price).ThenBy(s => s.Id)
+                    .Select(s => new { s.Id, s.SkuCode, s.VariantName, s.Price, s.Attributes })
+                    .ToList(),
+            })
+            .SingleOrDefaultAsync(cancellationToken);
+        if (found is null)
+        {
+            return null;
+        }
+
+        var p = found.Product;
+        return new StorefrontProduct(
+            p.Id, p.Slug, p.Name, p.Brand, p.Description, ReadSpecs(p.Specs), p.MinPrice!.Value, found.Category,
+            found.Skus.Select(s => new StorefrontSku(s.Id, s.SkuCode, s.VariantName, s.Price, ReadAttributes(s.Attributes)))
+                .ToList());
+    }
+
+    /// <summary>Id is the last key of every order, so equal prices or times never swap places between pages.</summary>
+    private static IOrderedQueryable<Product> Sort(IQueryable<Product> query, ProductSort sort) => sort switch
+    {
+        ProductSort.PriceAsc => query.OrderBy(p => p.MinPrice).ThenBy(p => p.Id),
+        ProductSort.PriceDesc => query.OrderByDescending(p => p.MinPrice).ThenByDescending(p => p.Id),
+        _ => query.OrderByDescending(p => p.CreatedAt).ThenByDescending(p => p.Id),
+    };
 
     /// <summary>The product with all its SKUs, in one query.</summary>
     public async Task<ProductResponse?> GetResponseAsync(Guid id, CancellationToken cancellationToken)
@@ -116,14 +202,17 @@ public sealed class ProductRepository(AppDbContext dbContext)
     public void ClearTracked() => dbContext.ChangeTracker.Clear();
 
     public static ProductResponse ToResponse(Product p, IReadOnlyList<SkuResponse> skus) => new(
-        p.Id, p.CategoryId, p.Name, p.Slug, p.Brand, p.Description,
-        JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(p.Specs) ?? [],
-        p.MinPrice, p.IsActive, p.CreatedAt, p.UpdatedAt, skus);
+        p.Id, p.CategoryId, p.Name, p.Slug, p.Brand, p.Description, ReadSpecs(p.Specs), p.MinPrice, p.IsActive, p.CreatedAt, p.UpdatedAt, skus);
 
     public static SkuResponse ToResponse(Sku s) => new(
-        s.Id, s.ProductId, s.SkuCode, s.VariantName, s.Price,
-        JsonSerializer.Deserialize<Dictionary<string, string>>(s.Attributes) ?? [],
-        s.IsActive, s.CreatedAt, s.UpdatedAt);
+        s.Id, s.ProductId, s.SkuCode, s.VariantName, s.Price, ReadAttributes(s.Attributes), s.IsActive, s.CreatedAt, s.UpdatedAt);
+
+    /// <summary>The jsonb columns are stored as JSON text; the service only ever writes JSON objects to them.</summary>
+    private static Dictionary<string, JsonElement> ReadSpecs(string json) =>
+        JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(json) ?? [];
+
+    private static Dictionary<string, string> ReadAttributes(string json) =>
+        JsonSerializer.Deserialize<Dictionary<string, string>>(json) ?? [];
 
     private const string LikeEscape = @"\";
 
