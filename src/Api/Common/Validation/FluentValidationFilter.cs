@@ -1,5 +1,3 @@
-using System.Text.Json;
-
 using FluentValidation;
 
 using Microsoft.AspNetCore.Mvc;
@@ -10,7 +8,8 @@ namespace Gearnix.Api.Common.Validation;
 
 /// <summary>
 /// Runs the FluentValidation validator of every action argument before the action runs (Rule.md §5).
-/// Any failure → 400 ValidationProblemDetails with camelCase field names; the action is not called.
+/// Any failure → 400 ValidationProblemDetails; the action is not called.
+/// Field names become camelCase when the response is written (<see cref="Errors.ValidationErrorKeys"/>).
 /// Arguments without a registered validator are skipped.
 /// </summary>
 public sealed class FluentValidationFilter(ProblemDetailsFactory problemDetailsFactory) : IAsyncActionFilter
@@ -39,7 +38,7 @@ public sealed class FluentValidationFilter(ProblemDetailsFactory problemDetailsF
 
             foreach (var failure in result.Errors)
             {
-                context.ModelState.AddModelError(ToCamelCasePath(failure.PropertyName), failure.ErrorMessage);
+                context.ModelState.AddModelError(failure.PropertyName, failure.ErrorMessage);
             }
         }
 
@@ -52,8 +51,4 @@ public sealed class FluentValidationFilter(ProblemDetailsFactory problemDetailsF
 
         await next();
     }
-
-    /// <summary>"Items[0].UnitPrice" → "items[0].unitPrice", matching the JSON the client sent.</summary>
-    private static string ToCamelCasePath(string propertyPath) =>
-        string.Join('.', propertyPath.Split('.').Select(JsonNamingPolicy.CamelCase.ConvertName));
 }
