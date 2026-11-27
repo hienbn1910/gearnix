@@ -934,7 +934,7 @@ Mọi task đi theo quy trình đầy đủ ở `Rule.md` §1.
   kiểm tra header CSRF; khóa tài khoản; khóa Data Protection trong database; lệnh `seed` cùng các vai trò và tài khoản
   WarehouseStaff/Admin (§13.4); policy phân quyền; cơ chế xác thực dành cho integration test.
   *Xong khi:* có test chứng minh các trường hợp `401`, `403`, thiếu CSRF và khóa tài khoản.
-- [ ] **W1-06** (#17) Quản trị Catalog: danh mục, sản phẩm, SKU (DTO, validator, sinh slug, cập nhật `MinPrice`).
+- [x] **W1-06** (#17) Quản trị Catalog: danh mục, sản phẩm, SKU (DTO, validator, sinh slug, cập nhật `MinPrice`).
 - [ ] **W1-07** Catalog công khai: danh sách sản phẩm (lọc, phân trang) và chi tiết sản phẩm.
 - [ ] **W1-08** Dữ liệu mẫu bằng Bogus (§13.4): danh mục, sản phẩm, SKU và khách demo. **Chưa có tồn kho** (thêm ở W2-03).
 - [ ] **W1-09** Dựng frontend: hai app Vite, routing, Tailwind, TanStack Query, sinh kiểu API,

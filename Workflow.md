@@ -934,7 +934,7 @@ Every task follows the full process in `Rule.md` §1.
   CSRF header check; lockout; Data Protection keys in the database; the `seed` command with roles and the
   WarehouseStaff/Admin accounts (§13.4); authorization policies; test authentication scheme for integration tests.
   *Done when:* tests prove the `401`, `403`, missing-CSRF and lockout cases.
-- [ ] **W1-06** (#17) Catalog administration: categories, products, SKUs (DTOs, validators, slug generation, `MinPrice` maintenance).
+- [x] **W1-06** (#17) Catalog administration: categories, products, SKUs (DTOs, validators, slug generation, `MinPrice` maintenance).
 - [ ] **W1-07** Public catalog: product list (filters, pagination) and product detail.
 - [ ] **W1-08** Seed data with Bogus (§13.4): categories, products, SKUs and demo customers. **No stock yet** (added in W2-03).
 - [ ] **W1-09** Frontend setup: both Vite apps, routing, Tailwind, TanStack Query, API type generation,
