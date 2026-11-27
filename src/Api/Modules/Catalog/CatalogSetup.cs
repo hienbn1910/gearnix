@@ -6,6 +6,8 @@ public static class CatalogSetup
     {
         services.AddScoped<CategoryRepository>();
         services.AddScoped<CategoryService>();
+        services.AddScoped<ProductRepository>();
+        services.AddScoped<ProductService>();
         return services;
     }
 }
