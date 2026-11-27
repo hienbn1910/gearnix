@@ -161,6 +161,7 @@ public sealed class StorefrontProductListTests(PostgresFixture postgres)
     [InlineData("minPrice=-1", "minPrice")]
     [InlineData("maxPrice=1.5", "maxPrice")]
     [InlineData("maxPrice=abc", "maxPrice")]
+    [InlineData("page=2147483647", "page")] // used to overflow the OFFSET and return 500
     public async Task List_InvalidFilter_Returns400KeyedByQueryName(string query, string expectedKey)
     {
         await using var factory = new GearnixApiFactory(postgres.ConnectionString);
