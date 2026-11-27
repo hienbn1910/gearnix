@@ -24,6 +24,12 @@ public sealed class CategoryRepository(AppDbContext dbContext)
         return (items, totalCount);
     }
 
+    /// <summary>Every category, ordered by sort order, then name, then id; read-only.</summary>
+    public async Task<IReadOnlyList<Category>> ListAllAsync(CancellationToken cancellationToken) =>
+        await dbContext.Categories.AsNoTracking()
+            .OrderBy(c => c.SortOrder).ThenBy(c => c.Name).ThenBy(c => c.Id)
+            .ToListAsync(cancellationToken);
+
     public Task<CategoryResponse?> GetResponseAsync(Guid id, CancellationToken cancellationToken) =>
         dbContext.Categories.AsNoTracking()
             .Where(c => c.Id == id)

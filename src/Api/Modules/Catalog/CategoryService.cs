@@ -8,13 +8,30 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Gearnix.Api.Modules.Catalog;
 
-/// <summary>Admin management of categories (Workflow.md §6.1, §9).</summary>
+/// <summary>Categories: Admin management and the storefront's category tree (Workflow.md §6.1, §9).</summary>
 public sealed class CategoryService(CategoryRepository categories, TimeProvider timeProvider)
 {
     public async Task<PagedResponse<CategoryResponse>> ListAsync(PageRequest page, CancellationToken cancellationToken)
     {
         var (items, totalCount) = await categories.ListPageAsync(page.Page, page.PageSize, cancellationToken);
         return new PagedResponse<CategoryResponse>(items, page.Page, page.PageSize, totalCount);
+    }
+
+    /// <summary>
+    /// Top-level categories with their sub-categories, from one query. The list is already in display order, so
+    /// grouping it keeps that order at both levels.
+    /// </summary>
+    public async Task<CategoryTree> GetTreeAsync(CancellationToken cancellationToken)
+    {
+        var all = await categories.ListAllAsync(cancellationToken);
+        var childrenByParent = all
+            .Where(c => c.ParentId is not null)
+            .ToLookup(c => c.ParentId!.Value, c => new CategoryTreeChild(c.Id, c.Name, c.Slug));
+        var items = all
+            .Where(c => c.ParentId is null)
+            .Select(c => new CategoryTreeItem(c.Id, c.Name, c.Slug, childrenByParent[c.Id].ToList()))
+            .ToList();
+        return new CategoryTree(items);
     }
 
     public async Task<Result<CategoryResponse>> GetAsync(Guid id, CancellationToken cancellationToken) =>
