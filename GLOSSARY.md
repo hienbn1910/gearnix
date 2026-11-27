@@ -16,6 +16,9 @@ Updated during `/grill-with-docs` sessions. Business rules behind each term: `Wo
 | **Specs** | A product's technical details (e.g. CPU, RAM), shown on the product page | properties |
 | **Attributes** | What distinguishes one SKU of a product from another (e.g. storage, color) | options |
 | **Min price** | The lowest price among a product's active SKUs; empty when it has none. Used to filter and sort products by price | starting price |
+| **Storefront** | The public, customer-facing shop: category menu, product list and product page | shop page, frontend (when the admin app is not meant) |
+| **Visible product** | A product the storefront shows: it is active and has at least one active SKU. Any other product is hidden, as if it did not exist | published, listed |
+| **Category tree** | All categories as top-level categories with their sub-categories. Filtering by a top-level category includes its sub-categories | category menu (in code) |
 
 ## Inventory
 

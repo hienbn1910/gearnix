@@ -571,7 +571,8 @@ Trạng thái khác → `409`.
 
 ## 9. Danh sách API
 
-Mọi route có tiền tố `/api`. Mọi endpoint trả danh sách đều phân trang (`Rule.md` §3).
+Mọi route có tiền tố `/api`. Mọi endpoint trả danh sách đều phân trang (`Rule.md` §3), trừ `GET /categories`: cây
+danh mục nhỏ, do Admin tạo bằng tay, và menu storefront cần cả cây.
 
 | Method | Route | Vai trò | Ghi chú |
 |---|---|---|---|
@@ -579,8 +580,8 @@ Mọi route có tiền tố `/api`. Mọi endpoint trả danh sách đều phân
 | POST | `/auth/login` | Anonymous | Có rate limit |
 | POST | `/auth/logout` | Mọi người đã đăng nhập | |
 | GET | `/auth/me` | Mọi người đã đăng nhập | Id, tên, vai trò |
-| GET | `/categories` | Anonymous | Có cache |
-| GET | `/products` | Anonymous | `q`, `categoryId`, `brand`, `minPrice`, `maxPrice`, `sort`, `page`, `pageSize`; có cache |
+| GET | `/categories` | Anonymous | Cây danh mục `{ items: [ { id, name, slug, children } ] }`, không phân trang; có cache |
+| GET | `/products` | Anonymous | Chỉ sản phẩm hiển thị được; `q`, `categoryId`, `brand`, `minPrice`, `maxPrice`, `sort` (`newest`, `priceAsc`, `priceDesc`; `relevance` khi có `q`), `page`, `pageSize`; có cache |
 | GET | `/products/{slug}` | Anonymous | Sản phẩm và các SKU; cache 60 giây |
 | GET | `/products/{slug}/stock-status` | Anonymous | Trạng thái hàng theo từng SKU; cache ≤ 10 giây |
 | GET | `/cart` | Customer | |
@@ -935,7 +936,8 @@ Mọi task đi theo quy trình đầy đủ ở `Rule.md` §1.
   WarehouseStaff/Admin (§13.4); policy phân quyền; cơ chế xác thực dành cho integration test.
   *Xong khi:* có test chứng minh các trường hợp `401`, `403`, thiếu CSRF và khóa tài khoản.
 - [x] **W1-06** (#17) Quản trị Catalog: danh mục, sản phẩm, SKU (DTO, validator, sinh slug, cập nhật `MinPrice`).
-- [ ] **W1-07** Catalog công khai: danh sách sản phẩm (lọc, phân trang) và chi tiết sản phẩm.
+- [ ] **W1-07** (#22) Catalog công khai: cây danh mục, danh sách sản phẩm (lọc, sắp xếp, phân trang) và chi tiết sản phẩm;
+  chỉ sản phẩm hiển thị được. Tìm kiếm `q` và kiểu sắp xếp `relevance` làm ở W4-05, cache ở W4-06.
 - [ ] **W1-08** Dữ liệu mẫu bằng Bogus (§13.4): danh mục, sản phẩm, SKU và khách demo. **Chưa có tồn kho** (thêm ở W2-03).
 - [ ] **W1-09** Dựng frontend: hai app Vite, routing, Tailwind, TanStack Query, sinh kiểu API,
   trang đăng nhập, danh sách và chi tiết sản phẩm (storefront), quản lý sản phẩm (admin); thêm job lint, build và
@@ -1082,6 +1084,7 @@ Các ADR cần viết (chậm nhất là khi xong task liên quan):
 | 2026-11-26 | Mã lỗi chung (gồm các mã dự phòng `conflict`, `bad_request`, `service_unavailable`), câu báo lỗi tiếng Anh do frontend dịch, enum dạng chuỗi, đường dẫn tài liệu API (§9) | Chủ dự án |
 | 2026-11-26 | Identity: mã lỗi `email_taken`, `invalid_credentials`, `csrf_header_missing` (§9); bắt đăng nhập mặc định cho mọi controller thay vì fallback policy, để route không tồn tại vẫn trả `404`; Data Protection nạp khóa từ database lúc khởi động (§11.3) (#14) | Chủ dự án |
 | 2026-11-27 | Catalog: `MinPrice` cho phép `null`, thêm `CreatedAt`/`UpdatedAt` cho các bảng catalog (§6.1); index cho categories và products `(CreatedAt, Id)` (§6.6); mã lỗi `sku_code_taken`, `slug_conflict`, `category_not_found`, `invalid_category_parent` (§9) (#17) | Chủ dự án |
+| 2026-11-27 | Catalog công khai: `GET /categories` trả cả cây danh mục, không phân trang; giá trị `sort` của sản phẩm là `newest`, `priceAsc`, `priceDesc` (§9); W1-07 để `q`/`relevance` cho W4-05 và cache cho W4-06 (§14) (#22) | Chủ dự án |
 
 ---
 
