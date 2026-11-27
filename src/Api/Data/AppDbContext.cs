@@ -1,4 +1,5 @@
 using Gearnix.Api.Data.Configurations;
+using Gearnix.Api.Modules.Catalog.Entities;
 using Gearnix.Api.Modules.Identity.Entities;
 
 using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
@@ -19,6 +20,12 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     /// <summary>Keys that encrypt auth cookies; stored here so redeploys do not sign users out.</summary>
     public DbSet<DataProtectionKey> DataProtectionKeys => Set<DataProtectionKey>();
 
+    public DbSet<Category> Categories => Set<Category>();
+
+    public DbSet<Product> Products => Set<Product>();
+
+    public DbSet<Sku> Skus => Set<Sku>();
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         // PascalCase in C#, snake_case in PostgreSQL (Workflow.md §6).
@@ -30,6 +37,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
         // Identity's own model first; the renames below build on it.
         base.OnModelCreating(modelBuilder);
         IdentityModelConfiguration.Configure(modelBuilder);
+        modelBuilder.ApplyConfiguration(new CategoryConfiguration());
+        modelBuilder.ApplyConfiguration(new ProductConfiguration());
+        modelBuilder.ApplyConfiguration(new SkuConfiguration());
 
         // Trigram matching for Vietnamese product search (Workflow.md §10).
         modelBuilder.HasPostgresExtension("pg_trgm");
